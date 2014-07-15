@@ -1,0 +1,81 @@
+import base64
+import os
+Import('env')
+
+def c_escape_string(s):
+    return s.replace('\n', '\\n\\\n').replace('"', '\\"')
+
+def raise_for_status(s, msg, except_class=Exception):
+    if s:
+        raise except_class(msg)
+
+def remove_trailing_slash(s):
+    #special case:
+    if s == '/': 
+        return s
+    while s.endswith('/'):
+    	s = s[:-1]
+    return s
+
+def build_sources_list(dirs, extn):
+    if not extn.startswith('.'):
+        extn = '.' + extn
+        
+    if not hasattr(dirs, '__iter__'):
+        dirs= (dirs,)
+    sources = list()
+    
+    for f in dirs:
+        f = remove_trailing_slash(f)
+        sources += [f + '/' + x for x in os.listdir(f) if x.endswith(extn)]
+    
+    return sources
+
+def get_debug_source(sources):
+    out = str()
+    strlen = 0
+    for source in sources:
+        with open(str(source)) as f:
+            text = f.read()
+            if text:
+                raise_for_status(os.system(" luac -p %s" % source), "couldn't parse lua source")
+            strlen += len(text)
+        out += ''.join(['\\x%s' % base64.b16encode(x) for x in text])
+    
+    return out, strlen
+
+def get_compiled_source(sources):
+    sources = [str(source) for source in sources]
+    raise_for_status(os.system('luac %s' % ' '.join(sources)), "failed to compile Lua source")
+    with open(os.path.dirname(os.path.dirname('__file__')) + 'luac.out') as f:
+        text = f.read()
+    strlen = len(text)
+    return ''.join(['\\x%s' % base64.b16encode(x) for x in text]), strlen
+
+def writeout(outpath, objcode, codelen):
+    outstart = \
+'''#ifndef BMO_LUA_DEFAULT_TEXT_H
+#define BMO_LUA_DEFAULT_TEXT_H
+const char * BMO_LUA_INIT_SCRIPT = "'''
+    with open(outpath, 'w') as outf:
+        outf.write(outstart)
+        outf.write(objcode + '";')
+        outf.write('\nconst size_t BMO_LUA_INIT_SCRIPT_LEN = %s;\n  ' % codelen)
+        outf.write('\n#endif\n\n')
+
+def compile_lua_sources(target=None, source=None, env=None):
+    print('compiling Lua sources...')
+    if ARGUMENTS.get('release', False):
+        writeout(COMPILED_LUA_OUTFILE, *get_compiled_source(source))
+    else:
+        writeout(COMPILED_LUA_OUTFILE, *get_debug_source(source))
+
+LUA_DIR = os.path.dirname((lambda x:x).func_code.co_filename)
+LUA_LIBS_DIR = os.path.join(LUA_DIR, 'lualibs/')
+COMPILED_LUA_OUTFILE = os.path.join(LUA_DIR, 'lua_default_text.h')
+ALL_LUA_SOURCES = build_sources_list(LUA_LIBS_DIR, 'lua')
+
+# The control file should be updated when any of the lua sources change
+env.Depends(COMPILED_LUA_OUTFILE, [f for f in ALL_LUA_SOURCES])
+env.Command(COMPILED_LUA_OUTFILE, ALL_LUA_SOURCES, compile_lua_sources)
+

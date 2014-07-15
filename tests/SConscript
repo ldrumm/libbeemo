@@ -1,0 +1,128 @@
+import os
+import subprocess
+
+from SCons.Errors import BuildError
+
+Import('env')
+
+
+"""
+The test builders search the tests directory for all C sources, and build each
+of them with the current environment, then link them to the libbeemo shared library.
+Currently every single C source is assumed to have a main(), so a single test
+should be a single file.
+If external files need to be built they should be directly #included as
+compilable source.
+Any extraneous external dependencies not part of the main env() will probably
+fail, unless the scons dependency resolver can automatically link the deps as necessary.
+This is naturally not a robust solution, but allows us to write quick and simple
+tests for the main library.  Hopefully this encourages more sanity-checks.
+"""
+
+# __file__ is not set so we need to get the path of this file on import.
+# This needs to be done on file import because execute_test() is called from a
+# different context with a different PWD.
+# This is due to scons building out-of-order (deferred)
+__file__ = os.getcwd()
+
+
+def run_all_tests(env, sources_list, **kwargs):
+    """
+    In the normal SCons flow, a failing unittest will cause the build to fail
+    immediately. We don't want that.  We want a report of all the failures/errors.
+    A possible solution would be `scons -i` though it will return success, and we need
+    jenkins/travis/whatever to know.
+    Also, with `scons -i` the build will return success even if
+    multiple failures occur in the main library build.
+    This behaviour prevents us from getting the complete picture as we want to
+    collect all test results without immediately bailing the build on a test failure.
+    Calling this function with a list of sources cause all tests
+    to run after a successful build, and pretend the test was successful.
+    On completion of the test run, the results are inspected and any failing
+    testcase  causes a BuildError to be thrown after failures are listed.
+
+    See http://stackoverflow.com/a/11492516 (and comments) for initial inspiration.
+    """
+
+    errors = list()
+    failures = list()
+    programs = list()
+    successes = list()
+    executed = list()
+    changed = list()
+
+    def _report_command(target, source, env):
+        if len(executed) < len(changed):
+            return
+        for test in failures:
+            print("=" * 80)
+            print("FAILURE: '%s'" % test.test_path)
+            print(test.stdout.read())
+            print(test.stderr.read())
+            print('-' * 80)
+        for test in errors:
+            print("=" * 80)
+            print("ERROR: '%s'" % test.test_path)
+            print(test.stdout.read())
+            print(test.stderr.read())
+            print('-' * 80)
+        if any(failures) or any(errors):
+            raise BuildError(
+                errstr="\n%d tests failures\n%d tests errors" %
+                    (len(failures), len(errors)),
+                node = failures
+                )
+        return 0
+
+    def _execute_test(target, source, env):
+        #we want our tests run with a PWD of their source.  This requires hax.
+        path = target[0].abspath
+        env.Dump()
+
+        try:
+            ps = subprocess.Popen(path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
+                cwd=__file__
+            )
+            #more hax to allow us to report where the test came from later
+            ps.test_path = path
+            ret = ps.wait()
+            if ret == 0:
+                successes.append(ps)
+            elif ret >= 125:    #This is likely to be posix specific
+                errors.append(ps)
+            else:
+                failures.append(ps)
+        except OSError as e:
+            errors.append(path, e)
+        finally:
+        #pretend to return success, whatever the real result
+            executed.append(ps)
+            return 0
+
+    file_extn = kwargs.pop('file_extn', '.c')
+    for source in sources_list:
+        test = env.Program('test_' + str(source).rstrip(file_extn), [source], **kwargs)
+        programs.append(test)
+        env.AddPostAction(test,  _execute_test)
+        env.AddPostAction(test, _report_command)
+
+
+    # this is a big hack: In order to allow the scons dependency resolver to work
+    # properly, we  must allow out-of-order builds.
+    # We must register `_report_command` to depend on  built test, and it must
+    # check if not all tests have been completed and exit immediately in that case.
+    [changed.append(x) for x in programs if x[0].changed()]
+#    env.AddPostAction(test, _report_command)
+    return programs
+
+if os.name == 'nt':
+    LIBS = ['beemo', 'm', 'pthread', 'lua', 'portaudio']
+else:
+    LIBS = ['beemo', 'm', 'pthread', 'lua5.2', 'portaudio']
+
+env.AddMethod(run_all_tests, "RunAllTests")
+all_my_tests = env.RunAllTests(Glob('*.c'),  LIBPATH='../', LIBS=LIBS, file_extn='.c')
+Return("all_my_tests")

@@ -1,0 +1,118 @@
+#adapted from Quentin Stafford-Fraser http://qandr.org/quentin/writings/debscons
+#TODO this is a WIP and builds debian packages that Lintian *HATES*
+import os, shutil, sys, string, math
+Import('env') # exported by parent SConstruct
+
+#for debian hardening/debian-specific compiler switches
+env.ParseConfig('dpkg-buildflags --get CPPFLAGS')
+env.ParseConfig('dpkg-buildflags --get CFLAGS')
+env.ParseConfig('dpkg-buildflags --get LDFLAGS')
+
+full_version = os.popen('git describe  --tags').read().strip().split('-')
+git_tag = full_version[0].strip(string.ascii_letters)
+git_increment = full_version[1]
+git_sha = full_version[2]
+git_full_sha = ''
+so_version = '0.'+git_tag
+# Here's the core info for the package
+
+DEBNAME = 'libbeemo'
+DEBVERSION = git_tag 
+DEBMAINT = "Luke Drummond <luke@lukedrummond.net>"
+DEBARCH = os.popen('dpkg-architecture').read().split('DEB_BUILD_ARCH=')[1].split()[0]
+DEBDEPENDS = "libc6, libsndfile1, liblua5.2-0, libportaudio2" # what are we dependent on?
+DEBRECOMMENDS = "jackd"
+DEBDESC = """Programmable DSP engine for games
+ libbeemo provides a graph-based audio programming environment for game 
+ developers, similar in spirit to ChucK, and Max/MSP, but designed to be 
+ embedded into game-engines, and providing for using in-game variables (health, 
+ number of enemies, progress etc) as DSP variables to affect generation/control 
+ of the game sound (pitch, volume, whatever the composer deems appropriate etc).
+ .
+ The language is based on Lua and therefore provides a fully-fledged, powerful, 
+ and fast programming environment with all its libraries available to the user.
+ .
+ This package provides the runtime only.  If you want to develop or build 
+ applications that use this functionality, install libbeemo-dev
+"""
+
+
+DEBFILES = [
+    # Now we specify the files to be included in the .deb
+    # Where they should go, and where they should be copied from.
+    # If you have a lot of files, you may wish to generate this 
+    # list in some other way.
+    ("usr/lib/libbeemo.so",             "#libbeemo.so"),
+    ("usr/lib/libbeemo.so.1",           "#libbeemo.so.1.2.3"),
+    ("usr/lib/libbeemo.so.1.2.3",       "#libbeemo.so.1.2.3"),
+]
+    
+# This is the debian package we're going to create
+debpkg = '#%s_%s%s_%s.deb' % (DEBNAME, DEBVERSION, '+git'+git_sha, DEBARCH)
+
+# and we want it to be built when we build 'pkg'
+env.Alias("pkg", debpkg)
+
+DEBCONTROLFILE = os.path.join(DEBNAME, "DEBIAN/control")
+
+# This copies the necessary files into place into place.
+# Fortunately, SCons creates the necessary directories for us.
+for f in DEBFILES:
+    # We put things in a directory named after the package
+    dest = os.path.join(DEBNAME, f[0])
+    # The .deb package will depend on this file
+    env.Depends(debpkg, dest)
+    # Copy from the the source tree.
+    env.Command(dest, f[1], Copy('$TARGET','$SOURCE'))
+    # The control file also depends on each source because we'd like
+    # to know the total installed size of the package
+    env.Depends(DEBCONTROLFILE, dest)
+
+
+#Debian requires a copyright file, and a changelog
+#copyright = 
+
+
+
+# Now to create the control file:
+
+CONTROL_TEMPLATE = """
+Package: %s
+Priority: extra
+Section: libs
+Installed-Size: %s
+Maintainer: %s
+Architecture: %s
+Version: %s-%s
+Depends: %s
+Recommends: %s
+Description: %s
+
+
+"""
+env.Depends(debpkg, DEBCONTROLFILE )
+
+# The control file should be updated when the SVN version changes
+env.Depends(DEBCONTROLFILE, env.Value(git_sha))
+
+# This function creates the control file from the template and info
+# specified above, and works out the final size of the package.
+def make_control(target=None, source=None, env=None):
+    installed_size = 0
+    for i in DEBFILES:
+        installed_size += os.stat(str(env.File(i[1])))[6]
+    installed_size = math.floor(installed_size/1024)
+    control_info = CONTROL_TEMPLATE % (
+        DEBNAME, installed_size, DEBMAINT, DEBARCH, DEBVERSION,
+        git_tag, DEBDEPENDS, DEBRECOMMENDS, DEBDESC)
+    f = open(str(target[0]), 'w')
+    f.write(control_info)
+    f.close()
+    
+# We can generate the control file by calling make_control
+env.Command(DEBCONTROLFILE, None, make_control)
+
+# And we can generate the .deb file by calling dpkg-deb
+env.Command(debpkg, 
+    DEBCONTROLFILE,"fakeroot dpkg-deb -b %s %s" % ("pkg/deb/%s" % DEBNAME, "$TARGET"))
+env.SharedLibrary('beemo', env['source'], SHLIBVERSION=so_version)

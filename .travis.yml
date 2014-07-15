@@ -1,0 +1,9 @@
+language: c
+compiler:
+  - gcc
+  - clang
+script: source tests/activate && scons tests
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq portaudio19-dev libjack-dev ladspa-sdk liblua5.2-dev libsndfile1-dev lua5.2 alsa-utils
+ - aplay --list-devices

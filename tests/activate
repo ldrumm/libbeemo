@@ -1,0 +1,10 @@
+deactivate () {
+    # reset old environment variables
+    export LD_LIBRARY_PATH="$_OLD_LD_LIBRARY_PATH"
+    unset _OLD_LD_LIBRARY_PATH
+    echo $LD_LIBRARY_PATH
+}
+export _OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/..
+export LD_LIBRARY_PATH=$DIR
+echo $LD_LIBRARY_PATH

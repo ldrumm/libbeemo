@@ -1,0 +1,25 @@
+import platform
+Import('env')
+
+def unsupported(system):
+    raise BuildError("%s does not have a package builder yet..." % system)
+
+supported = {
+    'deb':lambda :env.SConscript('deb/SConscript', 'env'), 
+    'osx':lambda :env.SConscript('osx/SConscript', 'env'), 
+    'msi':lambda :env.SConscript('win32/SConscript', 'env')
+}
+
+system = platform.system()
+if system == 'Linux':
+    distro = platform.linux_distribution()[0]
+    if distro.lower() in  ('debian', 'ubuntu'):
+        supported['deb']()
+    else:
+        unsupported(distro)
+elif system == 'Windows':
+    unsupported(system)  
+elif system == 'Darwin':
+    unsupported(system)
+else:
+    unsupported(system)
