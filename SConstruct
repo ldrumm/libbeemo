@@ -3,9 +3,9 @@ import os
 
 def release(env):
     env.Append(CCFLAGS=['-O2'])
-    env.Append(CCFLAGS=['-ffast-math'])
+#    env.Append(CCFLAGS=['-ffast-math'])
     env.Append(CCFLAGS=['-DNDEBUG'])
-#    env.Append(CCFLAGS = ['-mtune=native'])
+#    env.Append(CCFLAGS=['-mtune=native'])
 
 def profile(env):
     env.Append(CCFLAGS=['-O2'])
@@ -14,9 +14,9 @@ def profile(env):
 
 def std_switches(env):
     env.Append(CCFLAGS=['-std=c99',])
-    env.Append(CCFLAGS = ['-Wall',])
-    env.Append(CCFLAGS = ['-Wextra',])
-    env.Append(CCFLAGS = ['-Werror',])
+    env.Append(CCFLAGS=['-Wall',])
+    env.Append(CCFLAGS=['-Wextra',])
+    env.Append(CCFLAGS=['-Werror',])
 
 def check_dependencies(env, conf):
     config = {}
@@ -74,8 +74,6 @@ if os.name == 'nt':
     except ValueError:
         env.Append(CCFLAGS=['-std=gnu99'])
 
-
-
 if ARGUMENTS.get('analyse', False):
     """This fetches environment variables set by clang's scan-build
     to allow clang to run the static analyser
@@ -95,7 +93,7 @@ else:
     env = conf.Finish()
 
 ######  get compiler switches  ##########
-env.Append(CCFLAGS = get_preprocessor_switches(env, deps))
+env.Append(CCFLAGS=get_preprocessor_switches(env, deps))
 std_switches(env)
 if ARGUMENTS.get('release', False):
     print "Building in release mode with optimisations"
@@ -104,7 +102,7 @@ if ARGUMENTS.get('release', False):
 elif ARGUMENTS.get('profile', None):
     profile(env)
 else:
-    env.Append(CCFLAGS = ['-g3',])
+    env.Append(CCFLAGS=['-g3',])
 
 
 ############sources#############
@@ -126,7 +124,7 @@ if 'pkg' in COMMAND_LINE_TARGETS:
 
 if os.name == 'nt':
     #we seem to need to specify the what to link the dll against on windows.
-    libs = [x.lstrip('have_') for x in deps.keys() if deps[x] ==True and x.startswith('have_')]
+    libs = [x.lstrip('have_') for x in deps.keys() if deps[x] == True and x.startswith('have_')]
     beemo = env.SharedLibrary('beemo', env['source'], LIBS=libs)
 else:
     beemo = env.SharedLibrary('beemo', env['source'])
