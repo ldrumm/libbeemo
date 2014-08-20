@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 500 //mkstemp, fdopen
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -5,15 +7,17 @@
 #include <unistd.h>
 #include "../src/memory/map.h"
 #include "../src/error.h"
+
 #define BUF_LEN 1024
 #define FILE_LEN 8192
 
-
-int 
+int
 test_file(char * path, char bytepattern, size_t len)
 {
     char pattern = bytepattern;
-    FILE * f = fopen(path, "wb");
+    int fd = mkstemp(path);
+    assert(fd != -1);
+    FILE * f = fdopen(fd, "wb");
     if(!f){
         return -1;
     }
@@ -28,77 +32,77 @@ test_file(char * path, char bytepattern, size_t len)
     return 0;
 }
 
-int 
+int
 test_func(const char * target, const char * funcname)
 {
-    
+
     #ifdef WIN32
     char export[] = "__declspec(dllimport) ";
     #else
     char export[] = "";
     #endif
-    FILE * f;
-    char source[BUF_LEN];
-    char sourcename[BUF_LEN];
-    
-    char command[BUF_LEN];
-    
+    FILE * source_file;
+    char source_path[BUF_LEN];
+    char compiler_command[BUF_LEN];
     int ok;
-    snprintf(sourcename, BUF_LEN, "%s.c", target);
-    f = fopen(sourcename, "w");
-    
-    snprintf(
-        source, 
-        BUF_LEN,
+
+    snprintf(source_path, BUF_LEN-1, "%s.c", target);
+    source_file = fopen(source_path, "w");
+    assert(source_file);
+    fprintf(
+        source_file,
         "#include <stdio.h>\n"\
             "%s void %s(int *i){"\
             "*i *= 2;"
-            "}\n\n", 
+            "}\n\n",
         export,
         funcname
     );
-    printf("SOURCE:\n%s\n", source);
-    snprintf(command, 
+    fflush(source_file);
+
+    snprintf(compiler_command,
         BUF_LEN,
         "gcc -shared -fPIC %s -o %s",
-        sourcename,
+        source_path,
         target
     );
-    printf("command is %s\n", command);
-    fwrite(source, strlen(source), sizeof(char), f);
-    fflush(f);
-    ok = system(command);
+    bmo_info("building test shared-lib with command '%s\n'", compiler_command);
+
+    ok = system(compiler_command);
     if(!ok==0){
-        fprintf(stderr, "%s did not compile with the comand '%s'\n", target, command);
+        fprintf(stderr, "%s did not compile with the command '%s'\n", target, compiler_command);
         return -1;
     }
-    remove(sourcename);
+    remove(source_path);
     return ok;
 }
 
-int 
+int
 main(void)
-{   
-/*    assert(0);*/
+{
     bmo_verbosity(BMO_MESSAGE_DEBUG);
+
     int failure = 0;
-    char template[BUF_LEN];
-    strcpy(template, "test_map-XXXXXX");
-    if(test_file(template, 0x0f, FILE_LEN) == -1){
+    char map_path[BUF_LEN];
+    strcpy(map_path, "test_map-XXXXXX");
+    if(test_file(map_path, 0x0f, FILE_LEN) == -1){
         failure = 1;
         goto cleanup;
     }
     //basic sanity tests for bmo_map()
-    size_t size = bmo_fsize(template, &failure);
+    size_t size = bmo_fsize(map_path, &failure);
     assert(size == FILE_LEN);
-    char * map = bmo_map(template, 0, 0);
+    char * map = bmo_map(map_path, 0, 0);
     assert(map != NULL);
     for(size_t i = 0; i < size; i++){
         assert(map[i] == 0x0f);
-    }    
+    }
     bmo_unmap(map, size);
-    
-    test_func("hello", "test_func");
+
+    if(!test_func("hello", "test_func") == 0){
+        assert("couldn't compile test function'" && 0);
+        return 1;
+    };
     void (*func)(int *);
     func = bmo_loadlib("./hello", "test_func");
     assert(func != NULL);
@@ -106,7 +110,7 @@ main(void)
     func(&i);
     assert(i == 4);
 cleanup:
-    remove(template);
+    remove(map_path);
     remove("hello");
     return failure;
 }

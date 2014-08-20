@@ -1,5 +1,6 @@
 import os
 import subprocess
+import itertools
 
 from SCons.Errors import BuildError
 
@@ -50,6 +51,12 @@ def run_all_tests(env, sources_list, **kwargs):
     programs = list()
     successes = list()
     executed = list()
+    # The extra commands can be used to put the test through extra paces (valgrind much?)
+    # expected parameters are the command-line and any options with the '$' dollar
+    # character in place of the test path.
+    extra_commands = kwargs.pop("extra_commands", list())
+    for x in extra_commands:
+        assert x.count("$") == 1
 
     def _report_test_status(target, source, env):
         for test in failures:
@@ -65,8 +72,6 @@ def run_all_tests(env, sources_list, **kwargs):
             print(test.stderr.read())
             print('-' * 80)
         if any(failures) or any(errors):
-
-            import itertools
             nodes = itertools.chain(
                 (failure.target[0] for failure in failures),
                 (error.target[0] for error in errors)
@@ -90,33 +95,36 @@ def run_all_tests(env, sources_list, **kwargs):
     def _execute_test(target, source, env):
         #we want our tests run with a PWD of their source.  This requires hax.
         path = target[0].abspath
-
-        try:
-            ps = subprocess.Popen(path,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=False,
-                cwd=__file__
-            )
-            #more hax to allow us to report where the test came from later
-            ps.test_path = path
-            ps.target = target
-            ret = ps.wait()
-            if ret == 0:
-                successes.append(ps)
-            elif ret >= 125:
-                #This is likely to be posix (or even bash)-specific
-                #https://en.wikipedia.org/wiki/Exit_status
+        commands = [path] + [p for p in(x.replace('$', path).split() for x in extra_commands)]
+        for command in commands:
+            print("running %s\n" % command)
+            try:
+                ps = subprocess.Popen(command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=False,
+                    cwd=__file__
+                )
+                #more hax to allow us to report where the test came from later
+                ps.test_path = path
+                ps.target = target
+                ret = ps.wait()
+                if ret == 0:
+                    successes.append(ps)
+                elif ret >= 125:
+                    #This is likely to be posix (or even bash)-specific
+                    #https://en.wikipedia.org/wiki/Exit_status
+                    errors.append(ps)
+                else:
+                    failures.append(ps)
+            except OSError as e:
+                print(e)
                 errors.append(ps)
-            else:
-                failures.append(ps)
-        except OSError as e:
-            errors.append(path, e)
-        finally:
-        # Pretend to return success, whatever the real result.
-        # We defer failure notification to the end
-            executed.append(ps)
-            return 0
+            finally:
+            # Pretend to return success, whatever the real result.
+            # We defer failure notification to the end
+                executed.append(ps)
+        return 0
 
     file_extn = kwargs.pop('file_extn', '.c')
     for source in sources_list:
@@ -140,5 +148,27 @@ else:
     LIBS = ['beemo', 'm', 'pthread', 'lua5.2', 'portaudio']
 
 env.AddMethod(run_all_tests, "RunAllTests")
-all_my_tests = env.RunAllTests(Glob('*.c'),  LIBPATH='../', LIBS=LIBS, file_extn='.c')
+
+extra_commands = list()
+#if we're running an automated build, we can afford to wait for valgrind:
+if any(map(
+        lambda x: x in (
+            'CI',
+            'CONTINUOUS_INTEGRATION',
+            'JENKINS',
+            'TRAVIS',
+            'MEMCHECK'
+        ),
+        os.environ.keys()
+)):
+    extra_commands=["""valgrind --error-exitcode=1 --leak-check=full $"""]
+
+all_my_tests = env.RunAllTests(
+    Glob('*.c'),
+    LIBPATH='../',
+    LIBS=LIBS,
+    file_extn='.c',
+    extra_commands=extra_commands
+)
+
 Return("all_my_tests")

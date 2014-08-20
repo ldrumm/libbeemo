@@ -39,7 +39,7 @@ int nproc(void)
     GetSystemInfo(&info);
     return (int)info.dwNumberOfProcessors;
     #else
-    #error 
+    #error
     #endif
 }
 
@@ -63,12 +63,12 @@ void spawn_test_threads(int count, void * arg)
 
 int main(void)
 {
-    /*This tests that bmo_uid properly provides unique values across multiple 
-    threads.  
-    We can't force a race condition but we can try to run as many hardware 
-    threads as available over billions of calls which would _likely_ fail 
+    /*This tests that bmo_uid properly provides unique values across multiple
+    threads.
+    We can't force a race condition but we can try to run as many hardware
+    threads as available over billions of calls which would _likely_ fail
     if bmo_uid() was racy.
-    If only one hardware thread is available, just warn, as a single hardware 
+    If only one hardware thread is available, just warn, as a single hardware
     thread will never cause a race.
     */
     int nthreads = nproc();
@@ -80,8 +80,9 @@ int main(void)
     assert(nthreads < MAX_THREADS);
     printf("running bmo_uid() over %d threads\n", nthreads);
     spawn_test_threads(nthreads, &iter);
-    
+
     assert(bmo_uid() == (iter * nthreads));
     assert(BMO_ATOM_INC(&i) - BMO_ATOM_INC(&i) == -1);
+
     return 0;
 }

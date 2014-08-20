@@ -37,27 +37,15 @@ buffer_tests = TestingUnit{
     
     test_sys_buf_pointer_not_equal = function(self)
         local out = dsp.sys_buf("out")
-        local _in  = dsp.sys_buf("in")
+        local input  = dsp.sys_buf("in")
         local ctl = dsp.sys_buf("ctl")
         local t = {}
         t[ctl] = ctl
-        t[_in] = _in
+        t[input] = input
         t[out] = out
         local vals = 0
         for k, v in pairs(t) do vals = vals + 1 end
         self:assert_equal(vals, 3)
     end,
     
-    test_temp_buf_cleanup = function(self)
-        local buf = dsp.temp_buf(1, 1024)
-        buf = nil
-        self:assert_calls(function()collectgarbage();collectgarbage()end, dsp.gctempbuf)
-    end,
-    
-    test_calls = function(self)
-        local function a() collectgarbage()end
-        local function b() a() end
-        self:assert_calls(b, collectgarbage)
-        print(type(dsp.gctempbuf))
-    end
 }

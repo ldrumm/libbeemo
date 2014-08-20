@@ -14,7 +14,6 @@
 
 #include "../src/definitions.h"
 #include "../src/error.h"
-/*#include "../src/drivers/driver_helper_functions.h"*/
 #include "../src/lua/lua.h"
 #include "../src/error.h"
 #include "lib/stopwatch.c"
