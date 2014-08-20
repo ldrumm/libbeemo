@@ -5,7 +5,6 @@ from SCons.Errors import BuildError
 
 Import('env')
 
-
 """
 The test builders search the tests directory for all C sources, and build each
 of them with the current environment, then link them to the libbeemo shared library.
@@ -30,16 +29,18 @@ def run_all_tests(env, sources_list, **kwargs):
     """
     In the normal SCons flow, a failing unittest will cause the build to fail
     immediately. We don't want that.  We want a report of all the failures/errors.
-    A possible solution would be `scons -i` though it will return success, and we need
-    jenkins/travis/whatever to know.
+    A possible solution would be `scons -i` though it will return success, and
+    we need jenkins/travis/whatever to know.
     Also, with `scons -i` the build will return success even if
     multiple failures occur in the main library build.
     This behaviour prevents us from getting the complete picture as we want to
     collect all test results without immediately bailing the build on a test failure.
     Calling this function with a list of sources cause all tests
-    to run after a successful build, and pretend the test was successful.
+    to run after a successful build, and pretend the test was successful to prevent
+    immediate failure.
     On completion of the test run, the results are inspected and any failing
-    testcase  causes a BuildError to be thrown after failures are listed.
+    testcase  causes a BuildError to be thrown after failures are listed, and the
+    failed targets are deleted to
 
     See http://stackoverflow.com/a/11492516 (and comments) for initial inspiration.
     """
@@ -49,11 +50,8 @@ def run_all_tests(env, sources_list, **kwargs):
     programs = list()
     successes = list()
     executed = list()
-    changed = list()
 
-    def _report_command(target, source, env):
-        if len(executed) < len(changed):
-            return
+    def _report_test_status(target, source, env):
         for test in failures:
             print("=" * 80)
             print("FAILURE: '%s'" % test.test_path)
@@ -67,17 +65,31 @@ def run_all_tests(env, sources_list, **kwargs):
             print(test.stderr.read())
             print('-' * 80)
         if any(failures) or any(errors):
+
+            import itertools
+            nodes = itertools.chain(
+                (failure.target[0] for failure in failures),
+                (error.target[0] for error in errors)
+            )
+            # Hax - The most obvious way to mark the build as dirty is
+            # to delete it.
+            [x.remove() for x in nodes]
             raise BuildError(
-                errstr="\n%d tests failures\n%d tests errors" %
-                    (len(failures), len(errors)),
-                node = failures
-                )
+                errstr=(
+                    "\n%d test failures%s"
+                    "\n%d test errors%s\n") % (
+                    len(failures),
+                    len(failures) and ": ('%s')" % "', '".join(os.path.basename(test.test_path) for test in failures) or '',
+                    len(errors),
+                    len(errors) and ": ('%s')" % "', '".join(os.path.basename(test.test_path) for test in errors) or '',
+                ),
+                node = nodes,
+            )
         return 0
 
     def _execute_test(target, source, env):
         #we want our tests run with a PWD of their source.  This requires hax.
         path = target[0].abspath
-        env.Dump()
 
         try:
             ps = subprocess.Popen(path,
@@ -88,17 +100,21 @@ def run_all_tests(env, sources_list, **kwargs):
             )
             #more hax to allow us to report where the test came from later
             ps.test_path = path
+            ps.target = target
             ret = ps.wait()
             if ret == 0:
                 successes.append(ps)
-            elif ret >= 125:    #This is likely to be posix specific
+            elif ret >= 125:
+                #This is likely to be posix (or even bash)-specific
+                #https://en.wikipedia.org/wiki/Exit_status
                 errors.append(ps)
             else:
                 failures.append(ps)
         except OSError as e:
             errors.append(path, e)
         finally:
-        #pretend to return success, whatever the real result
+        # Pretend to return success, whatever the real result.
+        # We defer failure notification to the end
             executed.append(ps)
             return 0
 
@@ -107,15 +123,15 @@ def run_all_tests(env, sources_list, **kwargs):
         test = env.Program('test_' + str(source).rstrip(file_extn), [source], **kwargs)
         programs.append(test)
         env.AddPostAction(test,  _execute_test)
-        env.AddPostAction(test, _report_command)
-
 
     # this is a big hack: In order to allow the scons dependency resolver to work
     # properly, we  must allow out-of-order builds.
-    # We must register `_report_command` to depend on  built test, and it must
+    # We must register `_report_test_status` to depend on built tests, and it must
     # check if not all tests have been completed and exit immediately in that case.
-    [changed.append(x) for x in programs if x[0].changed()]
-#    env.AddPostAction(test, _report_command)
+    # Because 'results.txt' is never created, this test always runs.
+    report_test_status = Command('results.txt', programs, _report_test_status)
+    Depends(report_test_status, programs)
+
     return programs
 
 if os.name == 'nt':
