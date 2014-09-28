@@ -85,6 +85,13 @@ bmo_dsp_close(BMO_dsp_obj_t * dsp)
     bmo_mb_free(dsp->out_buffers, channels);
     bmo_mb_free(dsp->in_buffers, channels);
     bmo_mb_free(dsp->ctl_buffers, channels);
+    BMO_ll_t * ll = dsp->in_ports;
+    BMO_ll_t * next;
+    while(ll){
+        next = ll->next;
+        free(ll);
+        ll = next;
+    }
 }
 
 static int

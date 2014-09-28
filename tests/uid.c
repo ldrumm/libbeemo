@@ -72,7 +72,7 @@ int main(void)
     thread will never cause a race.
     */
     int nthreads = nproc();
-    uint64_t iter = 100000000;
+    uint64_t iter = 1000000;
     int i = 0;
     if(nthreads == 1){
         fprintf(stderr, "only one hardware thread available. Bugs will be masked\n");

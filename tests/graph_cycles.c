@@ -62,5 +62,15 @@ dsp_top_a       dsp_top_b
     for(size_t i=0; i < FRAMES;i++)
         assert(dsp_bottom->out_buffers[0][i] == test_buf_a[i]);
 
+    free(test_buf_a);
+    free(test_buf_b);
+    bmo_dsp_close(dsp_top_a);
+    free(dsp_top_a);
+    bmo_dsp_close(dsp_top_b);
+    free(dsp_top_b);
+    bmo_dsp_close(dsp_middle);
+    free(dsp_middle);
+    bmo_dsp_close(dsp_bottom);
+    free(dsp_bottom);
     return 0;
 }

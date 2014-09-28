@@ -248,7 +248,7 @@ dsp_top_a       dsp_top_b
     }
     BMO_dsp_obj_t * dsps[N_DSPS];
     for(size_t i = 0; i < N_DSPS; i++){
-         dsps[i] = bmo_lua_new(0, CHANNELS, FRAMES, RATE, "function dspmain()print([==[hello]==])end");
+         dsps[i] = bmo_lua_new(0, CHANNELS, FRAMES, RATE, "function dspmain() os.time() end");
          dsps[i]->_init(dsps[i], 0);
          if(i > 0)
             bmo_dsp_connect(dsps[i -1], dsps[i], 0);
@@ -259,7 +259,6 @@ dsp_top_a       dsp_top_b
     serialize(dsps[N_DSPS - 1], output_file, &reg[0]);
     for(size_t i = 0; i < N_DSPS; i++){
          dsps[i]->_close(dsps[i], 0);
-         free(dsps[i]->in_ports);
          free(dsps[i]);
     }
 
