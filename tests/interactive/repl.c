@@ -8,7 +8,7 @@ int main(void)
     luaL_openlibs(L);
 	bmo_reg_getline_nowait(L, "async");
 	printf("repl>>\n");
-    luaL_dostring(L,"(function debug.debug()"\
+    (void)luaL_dostring(L,"(function debug.debug()"\
 	        "repeat"\
 	        "io.write('repl>>')\n"\
 	        "line = async.getline()\n"\
