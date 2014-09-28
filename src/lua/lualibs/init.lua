@@ -1,5 +1,5 @@
 --[[
-We expect @dsp to be registered in the global environment, as well as @this_dsp_pointer
+We expect @dsp to be registered in the global environment, as well as @_dsp
 dsp prvides getters and setters to the BMO_dsp_obj_t to which this environment belongs.
 We then define 3 global tables @input, @output, and @control which can both consume lists of buffers when __call()ed, or be passed to functions / closures that operate on buffer objects
 ]]
@@ -12,7 +12,7 @@ function dspisrealtime()
 function
 ]]
 --assert(dsp)
---assert(this_dsp_pointer)
+--assert(_dsp)
 ----assert(new_dsp_buffer)
 --print('@@@@@@@')
 --print('creating outputbuffer')

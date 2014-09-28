@@ -1,9 +1,9 @@
 #ifdef BMO_HAVE_PORTAUDIO
-#include "../src/definitions.h"
-#include "../src/deleteme_sched.h"
-#include "../src/drivers/driver_utils.h"
-#include "../src/drivers/drivers.h"
-#include "../src/error.h"
+#include "../../src/definitions.h"
+#include "../../src/deleteme_sched.h"
+#include "../../src/drivers/driver_utils.h"
+#include "../../src/drivers/drivers.h"
+#include "../../src/error.h"
 #include <portaudio.h>
 
 #define CHANNELS 2

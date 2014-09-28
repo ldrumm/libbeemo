@@ -173,6 +173,12 @@ typedef struct BMO_buffer_obj_t
 	char is_alias;//flags for object aliasing another (don't free resources of alias types)
 }BMO_buffer_obj_t;
 
+typedef struct BMO_ll_t
+{
+    //basic singly linked list
+    struct BMO_ll_t * next;
+     void * data;
+}BMO_ll_t;
 
 typedef struct BMO_dsp_obj_t
 {
@@ -180,7 +186,7 @@ typedef struct BMO_dsp_obj_t
 	uint32_t type;							///< determines the type of the dsp object. one of plugin, lua interpreter, builtin etc.
 	uint32_t channels;						///< number of channels in the data
 	uint32_t rate;							///< sample rate
-	uint32_t ticks;							///< last buffer processed
+	uint32_t tick;							///< last buffer processed
 	uint32_t frames;
 	uint32_t flags;
 	float ** in_buffers;					///< audio/data state for the object
@@ -194,9 +200,8 @@ typedef struct BMO_dsp_obj_t
 	int (*_update)(void *, uint32_t);					///<function pointer to call process update routines 
 	int (*_close)(void *, uint32_t);					///<pointer to function deallocating state
 	
-	struct BMO_dsp_obj_t ** in_ports;					///< list of BMO_dsp_obj_t pointers from which to get and mix input data
-	struct BMO_dsp_obj_t ** ctl_ports;					///< list of BMO_dsp_obj_t pointers from which to get and mix control(sidechain)input data
-	void (*update_obj_buffer)(struct BMO_dsp_obj_t *);	///< function to update the buffer's internal state regardless of plugin status etc. 
+	BMO_ll_t * in_ports;					///< list of objects from which to get and mix input data
+	BMO_ll_t * ctl_ports;					///< list of objects from which to get and mix control(sidechain)input data
 } BMO_dsp_obj_t;
 
 

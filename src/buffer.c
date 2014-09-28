@@ -17,7 +17,7 @@ bmo_mb_new(uint32_t channels, uint32_t frames)
 		return NULL;
 
 	for (i = 0; i < channels; i++){
-		buffer[i] = malloc(sizeof(float) * frames);
+		buffer[i] = calloc(sizeof(float), frames);
 		if(!buffer[i])
 			goto fail;
 	}

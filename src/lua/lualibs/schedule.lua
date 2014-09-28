@@ -1,3 +1,8 @@
+function dsp.time()
+    --return the current time assumed by the dsp as tick start and tick end
+    return  dspticktimewindow()
+end
+
 dsp.schedule = {
     events = {},
     at = function(self, fn, starts, stops, repeats, period )
@@ -32,7 +37,7 @@ dsp.schedule = {
 ,
     current_events = function(self)
 --        print("CURRENT EVENTS")
-        local start, fin = dspticktimewindow()
+        local start, fin = dsp.time()
 --        print("dsptickdone")
         local t = {}
         for k, v in ipairs(self.events) do
@@ -73,15 +78,15 @@ dsp.schedule = {
 }
 
 function dsptick()
-    return dsp.getdsptick(this_dsp_pointer)
+    return dsp.getdsptick(_dsp)
 end
 
 function dspframes()
-    return dsp.getdspframes(this_dsp_pointer)
+    return dsp.getdspframes(_dsp)
 end
 
 function dsprate()
-    return dsp.getdsprate(this_dsp_pointer)
+    return dsp.getdsprate(_dsp)
 end
 
 function dspticktimewindow()

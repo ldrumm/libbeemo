@@ -1,11 +1,15 @@
 import base64
 import os
+
+from SCons.Errors import BuildError
+
 Import('env')
+
 
 def c_escape_string(s):
     return s.replace('\n', '\\n\\\n').replace('"', '\\"')
 
-def raise_for_status(s, msg, except_class=Exception):
+def raise_for_status(s, msg, except_class=BuildError):
     if s:
         raise except_class(msg)
 
@@ -22,7 +26,7 @@ def build_sources_list(dirs, extn):
         extn = '.' + extn
         
     if not hasattr(dirs, '__iter__'):
-        dirs= (dirs,)
+        dirs=(dirs,)
     sources = list()
     
     for f in dirs:
@@ -46,20 +50,27 @@ def get_debug_source(sources):
 
 def get_compiled_source(sources):
     sources = [str(source) for source in sources]
-    raise_for_status(os.system('luac %s' % ' '.join(sources)), "failed to compile Lua source")
+    raise_for_status(os.system('luac -s %s' % ' '.join(sources)), "failed to compile Lua source")
     with open(os.path.dirname(os.path.dirname('__file__')) + 'luac.out') as f:
         text = f.read()
     strlen = len(text)
     return ''.join(['\\x%s' % base64.b16encode(x) for x in text]), strlen
 
+def split_escaped(script, seg_length=19):
+    import re
+    import string
+    match = re.findall(r"\\x[0-9a-f]{2}", script, re.IGNORECASE)
+    return string.join(['"' + string.join(match[x:x+seg_length], '') + \
+        '" \\\n' for x in range(0, len(match), seg_length)], "").rstrip('\\\n')
+
 def writeout(outpath, objcode, codelen):
-    outstart = \
-'''#ifndef BMO_LUA_DEFAULT_TEXT_H
+    outstart = '''#ifndef BMO_LUA_DEFAULT_TEXT_H
 #define BMO_LUA_DEFAULT_TEXT_H
-const char * BMO_LUA_INIT_SCRIPT = "'''
+const char * BMO_LUA_INIT_SCRIPT = \\
+'''
     with open(outpath, 'w') as outf:
         outf.write(outstart)
-        outf.write(objcode + '";')
+        outf.write(split_escaped(objcode) + ';')
         outf.write('\nconst size_t BMO_LUA_INIT_SCRIPT_LEN = %s;\n  ' % codelen)
         outf.write('\n#endif\n\n')
 

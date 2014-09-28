@@ -10,15 +10,40 @@
 #include "error.h"
 #include "definitions.h"
 #include "atomics.h"
+#include "dsp_obj.h"
 
-uint64_t 
+uint64_t
 bmo_uid(void)
 {
 	static volatile uint64_t i = 0;
 	return BMO_ATOM_INC(&i);
 }
 
-BMO_dsp_obj_t * 
+static int _bmo_dsp_init(void * dsp, uint32_t flags)
+{
+    //Well apparently it does nothing...
+    (void)dsp;
+    (void)flags;
+    return 0;
+}
+static int _bmo_dsp_update(void * obj, uint32_t flags)
+{
+    //just copy input buffers to output.
+    (void)flags;
+    BMO_dsp_obj_t * dsp = obj;
+    bmo_mb_cpy(dsp->out_buffers, dsp->in_buffers, dsp->channels, dsp->frames);
+    return 0;
+}
+static int _bmo_dsp_close(void * dsp, uint32_t flags)
+{
+    //Well apparently it does nothing...
+    (void)flags;
+    bmo_dsp_close(dsp);
+    return 0;
+}
+
+
+BMO_dsp_obj_t *
 bmo_dsp_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
 {
 	BMO_dsp_obj_t * dsp = malloc(sizeof(BMO_dsp_obj_t));
@@ -31,10 +56,10 @@ bmo_dsp_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
 	dsp->type = flags; 			//FIXME define dsp-object flags
 	dsp->channels = channels;	
 	dsp->rate = rate;			
-	dsp->ticks = 0;			
+	dsp->tick = 0;
 	dsp->in_buffers = bmo_mb_new(channels, frames);
 	dsp->out_buffers = bmo_mb_new(channels, frames);
-	dsp->ctl_buffers = bmo_mb_new(channels, frames); 
+	dsp->ctl_buffers = bmo_mb_new(channels, frames);
 	if((!dsp->ctl_buffers) || (!dsp->out_buffers) || (!dsp->in_buffers)){
 		free(dsp->ctl_buffers);
 		free(dsp->out_buffers);
@@ -43,42 +68,17 @@ bmo_dsp_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
 		return NULL;
 	}
 	dsp->handle = NULL;
-	dsp->_init = NULL;
-	dsp->_update = NULL;
-	dsp->_close = NULL;
+	dsp->_init = _bmo_dsp_init;
+	dsp->_update = _bmo_dsp_update;
+	dsp->_close = _bmo_dsp_close;
 	dsp->in_ports = NULL;
 	dsp->ctl_ports = NULL;
-	dsp->update_obj_buffer = NULL;
+/*	dsp->update_obj_buffer = NULL;*/
 	
 	return dsp;
 }
 
-int bmo_dsp_connect(BMO_dsp_obj_t *from, BMO_dsp_obj_t *to, uint32_t flags)
-{
-	assert(from);
-	assert(to);
-	(void)flags;
-	if(!from || !to || !to->in_ports){
-		bmo_err("could not connect DSP objects:%p -> %p\n", from, to); 
-		return -1;
-	}
-	int i = 0;
-	while(to->in_ports[i]){ //O(n)  TODO perhaps add a port_idx field to the dsp to allow O(1) updates?
-		i++; 
-	}	
-	BMO_NOT_IMPLEMENTED;
-	return 0;
-	
-}
-
-void bmo_dsp_detach(BMO_dsp_obj_t *a, BMO_dsp_obj_t *b)
-{
-	BMO_NOT_IMPLEMENTED;
-	(void)a;
-	(void)b;
-}
-
-void 
+void
 bmo_dsp_close(BMO_dsp_obj_t * dsp)
 {
     uint32_t channels = dsp->channels;
@@ -87,7 +87,7 @@ bmo_dsp_close(BMO_dsp_obj_t * dsp)
     bmo_mb_free(dsp->ctl_buffers, channels);
 }
 
-static int 
+static int
 _bmo_dsp_rb_init(void * obj, uint32_t flags)
 {
     (void)obj;
@@ -95,7 +95,7 @@ _bmo_dsp_rb_init(void * obj, uint32_t flags)
     return 0;
 }
 
-static int 
+static int
 _bmo_dsp_rb_update(void * obj, uint32_t flags)
 {
     (void)flags;
@@ -107,11 +107,14 @@ _bmo_dsp_rb_update(void * obj, uint32_t flags)
         bmo_zero_mb(dsp->out_buffers, dsp->channels, dsp->frames);
         bmo_read_rb(dsp->handle, dsp->out_buffers, dsp->frames);
     }
+    else{
+        assert(0 && "Ringbuffer dsp object must be declared as input or output"); //Bad type declarations
+    }
     //TODO error handling in rb_*()calls
     return 0;
 }
 
-static int 
+static int
 _bmo_dsp_rb_close(void * obj, uint32_t flags)
 {
     (void)obj;
@@ -120,10 +123,10 @@ _bmo_dsp_rb_close(void * obj, uint32_t flags)
     return 0; //TODO dsp_*_close() functions should be declared void not int.  free(3) is void. bmo_dsp_close() is void.
 }
 
-BMO_dsp_obj_t * 
+BMO_dsp_obj_t *
 bmo_dsp_rb_new(void * ringbuffer, uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
 {
-    /*create a new DSP object with a ringbuffer as the backend.  
+    /** create a new DSP object with the given ringbuffer as the backend.
     When (flags & BMO_DSP_TYPE_OUTPUT), input will be copied to output as well as written into the ringbuffer.
     This allows graphs like the following:
         |
@@ -132,7 +135,7 @@ bmo_dsp_rb_new(void * ringbuffer, uint32_t flags, uint32_t channels, uint32_t fr
    [ringbuffer1]--->[DAC]
         |
     [some DSP]
-        |    
+        |
  [some other DSP]
         |
    [ringbuffer2]--->[Disk Writer]
@@ -150,11 +153,11 @@ bmo_dsp_rb_new(void * ringbuffer, uint32_t flags, uint32_t channels, uint32_t fr
     dsp->_init = _bmo_dsp_rb_init;
     dsp->_update = _bmo_dsp_rb_update;
     dsp->_close = _bmo_dsp_rb_close;
-    
+
     return dsp;
 }
 
-static int 
+static int
 _bmo_dsp_bo_init(void * obj, uint32_t flags)
 {
     //But existing is basically all I do! (dsp->_init can't be NULL)
@@ -172,7 +175,7 @@ _bmo_dsp_bo_update(void * obj, uint32_t flags)
     return bo->get_samples(bo, dsp->out_buffers, dsp->frames);
 }
 
-static int 
+static int
 _bmo_dsp_bo_close(void * obj, uint32_t flags)
 {
     (void)flags;
@@ -192,7 +195,7 @@ bmo_dsp_bo_new(void * bo, uint32_t flags, uint32_t channels, uint32_t frames, ui
     BMO_dsp_obj_t * dsp = bmo_dsp_new(BMO_DSP_OBJ_BO|flags, channels, frames, rate);
     if(!dsp)
         return NULL;
-    
+
     dsp->handle = bo;
     dsp->_init = _bmo_dsp_bo_init;
     dsp->_update = _bmo_dsp_bo_update;

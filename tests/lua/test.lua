@@ -1,7 +1,7 @@
 global_functions = TestingUnit{
     fixtures = {
         test_global_exists={
-            {this_dsp_pointer},
+            {_dsp},
             {dsp},
         },
         test_obj_params = {
@@ -23,7 +23,7 @@ global_functions = TestingUnit{
         if expected_val == nil then
             return self:fail("The test runner did not detect an expected environment variable")
         end
-        self:assert_equal(dsp[func_name](this_dsp_pointer), expected_val)
+        self:assert_equal(dsp[func_name](_dsp), expected_val)
     end,
 }
 

@@ -183,7 +183,7 @@ _bmo_lua_gettick(lua_State * L)
 {
     BMO_dsp_obj_t *dsp = NULL;
     dsp = _bmo_lua_getdsplightuserdata(L, 1);  
-    lua_pushnumber(L, (lua_Number)dsp->ticks);
+    lua_pushnumber(L, (lua_Number)dsp->tick);
     return 1;
 }
 
@@ -276,7 +276,6 @@ _bmo_lua_tmpbuffree(lua_State *L)
     }
     
     void * buf = lua_touserdata(L, 1);
-    bmo_debug("GC:%p with %u channels\n", buf, channels);
     bmo_mb_free(buf, channels);
     return 0;
 }

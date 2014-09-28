@@ -28,7 +28,7 @@ int nproc(void)
     ssize_t nread;
     FILE * fd = popen("nproc", "r");
 
-   nread = read(fileno(fd), buf, 1024);
+    nread = read(fileno(fd), buf, 1024);
     pclose(fd);
     if( nread < 1){
         return nread;

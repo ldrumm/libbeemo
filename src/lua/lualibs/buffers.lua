@@ -112,10 +112,8 @@ function dsp.new_buffer(template)
         __lt = function(t, cmp)
             local _ = type(t)
             if  _ == 'table' then
-                print('got __lt with table as operand')
                 t:mix(cmp)
             elseif _ == 'function' then
-                print('got __lt with function as operand')
                 t(cmp)
             end
         end
@@ -157,7 +155,7 @@ function dsp.sys_buf(name)
     name = name or "out"
     local _ = {output="out", input="in", control="ctl"}
     name = _[name] or name
-    return dsp.new_buffer{raw_dsp_obj=this_dsp_pointer, name=name}
+    return dsp.new_buffer{raw_dsp_obj=_dsp, name=name}
 end
 
 function dsp.buf_from(t, ch, frames)

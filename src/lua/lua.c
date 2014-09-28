@@ -56,7 +56,7 @@ _bmo_lua_loadbytecode(lua_State * L, const char * bytecode,  size_t len, const c
 
 
 
-static int 
+static int
 _bmo_dsp_init_lua(void * in, uint32_t flags)
 {
     const char * dsp_name = "dsp";
@@ -66,7 +66,7 @@ _bmo_dsp_init_lua(void * in, uint32_t flags)
 	lua_State * L = luaL_newstate();
 	
 	luaL_openlibs(L);
-	_bmo_lua_reg_builtin(L, dsp, dsp_name, "this_dsp_pointer");
+	_bmo_lua_reg_builtin(L, dsp, dsp_name, "_dsp");
 //	_bmo_lua_reg_fio(L, dsp_name, "file");
 	
 	int status = luaL_dostring(L, state->init_script);
@@ -106,11 +106,10 @@ _bmo_dsp_update_lua(void * in, uint32_t flags)
 		bmo_zero_mb(dsp->out_buffers, dsp->channels, dsp->frames);
 		return -1;
 	}
-	status = luaL_dostring(state->L, "\ndo schedule:update() end");
+	status = luaL_dostring(state->L, "\ndo dsp.schedule:update() end");
 	if (status){
 	    bmo_err("scheduler failed to run:%s\n", lua_tostring(state->L, -1));
 	}
-	dsp->ticks++;
 	return status;
 }
 
@@ -138,10 +137,12 @@ bmo_lua_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate, c
 	if(user_script){
 	    script_len = strlen(user_script)+1; //TODO support loading bytecode strings
 	    script = bmo_strdupb(user_script, script_len); 
+        if(!script){
+		    bmo_err("Lua script could not be loaded:%s\n", errno ? strerror(errno):"");
+		    return NULL;
+	    }
 	}
-	if(!script){
-		bmo_debug("Lua script could not be loaded:%s\n", strerror(errno));
-	}
+
 	BMO_lua_context_t * state = malloc(sizeof(BMO_lua_context_t));
 	if(!state){
 		bmo_err("could not create lua state:%s\n", strerror(errno));

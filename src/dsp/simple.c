@@ -26,6 +26,13 @@ void bmo_mix_sb(float * out, float * f1, float * f2, uint32_t samples)
 			out[samples] = f1[samples] + f2[samples];
 }
 
+void bmo_mix_mb(float ** out, float ** f1, float ** f2, uint32_t channels, uint32_t frames)
+{
+    while(channels--){
+        bmo_mix_sb(out[channels], f1[channels], f2[channels], frames);
+    }
+}
+
 void bmo_sbcpy(float * out, float * in, uint32_t samples)
 {
 //    bmo_debug("copying %d samples from %p to %p", samples, in, out);

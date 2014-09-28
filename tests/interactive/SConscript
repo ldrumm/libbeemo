@@ -1,0 +1,10 @@
+Import('env')
+import ipdb
+
+for source in Glob('*.c'):
+    test = env.Program(
+        'test_' + str(source).rstrip('.c'),
+        [source],
+        LIBPATH='../../',
+        LIBS=['beemo', 'm', 'pthread', 'lua5.2', 'portaudio']
+    )

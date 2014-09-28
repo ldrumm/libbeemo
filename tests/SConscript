@@ -171,4 +171,6 @@ all_my_tests = env.RunAllTests(
     extra_commands=extra_commands
 )
 
+env.SConscript('interactive/SConscript', 'env')
+
 Return("all_my_tests")
