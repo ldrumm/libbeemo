@@ -1,5 +1,4 @@
 Import('env')
-import ipdb
 
 for source in Glob('*.c'):
     test = env.Program(
