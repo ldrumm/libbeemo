@@ -132,7 +132,7 @@ bmo_dsp_ladspa_new(const char * path, uint32_t flags, uint32_t channels, uint32_
 			j++;
 		}
 	}
-	bmo_info("connected %d input ports\n", j);
+	bmo_debug("connected %d input ports\n", j);
 	j = 0;
 	for(unsigned i = 0; i < ld->PortCount; i++){
 		if(LADSPA_IS_PORT_AUDIO(ld->PortDescriptors[i]) && LADSPA_IS_PORT_OUTPUT(ld->PortDescriptors[i]) ){
@@ -147,7 +147,7 @@ bmo_dsp_ladspa_new(const char * path, uint32_t flags, uint32_t channels, uint32_
 	    ld->activate(lh);
 	state->lh = lh;
 	state->ld = (void *) ld;
-	bmo_info("connected %d output ports\n", j);
+	bmo_debug("connected %d output ports\n", j);
 
 	return dsp;
 }

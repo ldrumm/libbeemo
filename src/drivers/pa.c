@@ -27,7 +27,7 @@ _bmo_pa_process_cb(const void *ins, void *outs, unsigned long frames, const PaSt
 	assert(frames < UINT32_MAX);
 	BMO_state_t * state = (BMO_state_t *)data;
 	if (bmo_status(state) == BMO_DSP_STOPPED){
-        bmo_info("Quit detected\n");
+        bmo_info("Audio process quit detected\n");
 		bmo_zero_mb((float **)outs, state->n_playback_ch, frames);
 		bmo_driver_callback_done(state, BMO_DSP_STOPPED);
 		return paComplete;
@@ -35,8 +35,8 @@ _bmo_pa_process_cb(const void *ins, void *outs, unsigned long frames, const PaSt
 	else if (bmo_status(state) == BMO_DSP_RUNNING){
 		bmo_read_rb(state->ringbuffer, (float **) outs, (uint32_t)frames);
 	}
-	state->dsp_load = Pa_GetStreamCpuLoad(state->driver.pa.stream);
-	bmo_driver_callback_done(state,  BMO_DSP_RUNNING);
+	state->dsp_load = (float)Pa_GetStreamCpuLoad(state->driver.pa.stream);
+	bmo_driver_callback_done(state, BMO_DSP_RUNNING);
 	return paContinue;
 }
 
@@ -63,13 +63,14 @@ bmo_pa_start(BMO_state_t * state, uint32_t channels, uint32_t rate, uint32_t buf
 	if (state->driver.pa.output_params.device == paNoDevice){
 		bmo_err("No default portaudio output device available.\n");
     }
-    bmo_debug("opening stream");
     
     assert(((int64_t)channels) < INT_MAX); //portaudio uses a signed int here. we are passing an unisgned int
 	state->driver.pa.output_params.channelCount = (int)channels;
 	state->n_playback_ch = channels;
 	state->driver.pa.output_params.sampleFormat = paFloat32 | paNonInterleaved;
-	state->driver.pa.output_params.suggestedLatency = Pa_GetDeviceInfo(state->driver.pa.output_params.device)->defaultLowOutputLatency;
+	state->driver.pa.output_params.suggestedLatency = Pa_GetDeviceInfo(
+	    state->driver.pa.output_params.device
+	)->defaultLowOutputLatency;
 	state->driver.pa.output_params.hostApiSpecificStreamInfo = NULL;
 
     /* Open an audio I/O stream. */
