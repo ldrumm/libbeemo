@@ -302,7 +302,7 @@ BMO_dummyProcessCallback(void * data, uint32_t frames)
 	}
 	else if (bmo_status() == BMO_DSP_RUNNING)
 	{
-		state->getter->get_samples(state->driver.dummy.out_buffers, state->getter, frames);
+		state->getter->read(state->driver.dummy.out_buffers, state->getter, frames);
 		bmo_conv_mftoix(outbuf,state->driver.dummy.out_buffers,
 			state->n_playback_ch,
 			state->driver.dummy.stream_format, 

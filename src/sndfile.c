@@ -53,7 +53,7 @@ _bmo_fopen_sndfile(const char * path, uint32_t flags)
 	}
 	obj = bmo_bo_new(BMO_EXTERNAL_DATA, (uint32_t)info.channels, (size_t)info.frames,  (uint32_t)info.samplerate, 0, 0, sf);
 	obj->seek = _bmo_seek_bo_sndfile;
-	obj->get_samples = _bmo_get_bo_sndfile;
+	obj->read = _bmo_get_bo_sndfile;
 	return obj;
 }
 #endif

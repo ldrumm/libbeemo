@@ -116,7 +116,7 @@ typedef uint32_t vec4u __attribute__ ((vector_size (16)));
 
 /**
 The audio buffer object contains data as to the encoding and mapping of audio data in memory on disk, or fetched from a dynamic stream (ADC).
-Audio buffers can either be decoded into memory, dynamically demultiplexed and decoded from from an mmapped file, or got from a network / audio interface / jack buffer.  This is transparent to the dsp and audio object functions which will call the get_samples() callback function defined at object creation.  This will work regardless of the input method, and simplifies logic.
+Audio buffers can either be decoded into memory, dynamically demultiplexed and decoded from from an mmapped file, or got from a network / audio interface / jack buffer.  This is transparent to the dsp and audio object functions which will call the read() callback function defined at object creation.  This will work regardless of the input method, and simplifies logic.
 */
 #define BMO_DSP_OBJ_LADSPA              0x00800000
 #define BMO_DSP_OBJ_LUA                 0x01000000
@@ -167,7 +167,7 @@ typedef struct BMO_buffer_obj_t
 	size_t file_len;				///< total bytes of whole file for unmapping
 	void * handle;					///< retargetable pointer for bmo_map, or other codec state. (e.g.the sndfile callback uses this for SNDFILE *)
 	BMO_buffer_obj_storage_t buffer;
-	int (*get_samples)(void * bo, float ** dest, uint32_t frames);			// function pointer to callback that delivers samples.
+	int (*read)(void * bo, float ** dest, uint32_t frames);			// function pointer to callback that delivers samples.
 	int (*seek)(void * obj, long off, int whence);				
 	size_t (*tell)(void * obj);	//
 	char is_alias;//flags for object aliasing another (don't free resources of alias types)

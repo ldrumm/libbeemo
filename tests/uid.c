@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "../src/atomics.h"
-#include "../src/dsp_obj.h"
+#include "../src/util.h"
 #include "../src/error.h"
 #include "lib/stopwatch.c"
 #include <pthread.h>
@@ -18,6 +18,10 @@
 #define MAX_THREADS 1024
 #ifdef NDEBUG
 #undef NDEBUG
+#endif
+
+#ifndef MIN
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
 int nproc(void)
@@ -72,6 +76,9 @@ int main(void)
     thread will never cause a race.
     */
     int nthreads = nproc();
+    if(getenv("TRAVIS")|| getenv("JENKINS_HOME")){
+        nthreads = MIN(4, nthreads); //CI builds time out because there are more physical processor in the host than the guest
+    }
     uint64_t iter = 1000000;
     int i = 0;
     if(nthreads == 1){

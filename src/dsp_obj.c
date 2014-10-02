@@ -9,15 +9,8 @@
 #include "dsp/simple.h"
 #include "error.h"
 #include "definitions.h"
-#include "atomics.h"
 #include "dsp_obj.h"
-
-uint64_t
-bmo_uid(void)
-{
-	static volatile uint64_t i = 0;
-	return BMO_ATOM_INC(&i);
-}
+#include "util.h"
 
 static int _bmo_dsp_init(void * dsp, uint32_t flags)
 {
@@ -179,7 +172,7 @@ _bmo_dsp_bo_update(void * obj, uint32_t flags)
     assert(obj);
     BMO_dsp_obj_t * dsp = (BMO_dsp_obj_t *)obj;
     BMO_buffer_obj_t * bo = dsp->handle;
-    return bo->get_samples(bo, dsp->out_buffers, dsp->frames);
+    return bo->read(bo, dsp->out_buffers, dsp->frames);
 }
 
 static int

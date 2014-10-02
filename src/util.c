@@ -3,6 +3,15 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "error.h"
+#include "atomics.h"
+
+uint64_t
+bmo_uid(void)
+{
+	static volatile uint64_t i = 0;
+	return BMO_ATOM_INC(&i);
+}
+
 char * 
 bmo_strdupb(const char * txt, size_t len) 
 //this is essentially strdup but supporting binary arrays and requires a len param as a consequence
