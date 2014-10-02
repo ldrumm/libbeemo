@@ -19,11 +19,11 @@ bmo_ladspa_info(const LADSPA_Descriptor * ld)
 		bmo_info("LADSPA Plugin \'%s\' does not support in place buffer writes.\n", ld->Name);
 	}
 	if(LADSPA_IS_HARD_RT_CAPABLE(properties)){
-		bmo_debug("LADSPA Plugin \'%s\' claims to support Hard-Realtime limits\n", ld->Name);
+		bmo_info("LADSPA Plugin \'%s\' claims to support Hard-Realtime limits\n", ld->Name);
 	}
 	bmo_debug("LADSPA Plugin \'%s\' has %lu ports available.\n", ld->Name, ld->PortCount);
 	for(unsigned long i = 0; i < ld->PortCount; i++){
-		bmo_debug("LADSPA Plugin \'%s\' port%lu:%s :: %s%s %s%s::%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s>=%1.1f<=%1.1f\n", \
+		bmo_info("LADSPA Plugin \'%s\' port%lu:%s :: %s%s %s%s::%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s>=%1.1f<=%1.1f\n", \
 			ld->Name, i, ld->PortNames[i],
 			LADSPA_IS_PORT_AUDIO(ld->PortDescriptors[i])?"(audio)":"",
 			LADSPA_IS_PORT_CONTROL(ld->PortDescriptors[i])?"(control)":"",
@@ -52,8 +52,6 @@ bmo_ladspa_info(const LADSPA_Descriptor * ld)
 }
 
 
-
-
 static const LADSPA_Descriptor * 
 bmo_load_ladspa(const char * path)
 {
@@ -75,10 +73,10 @@ static int
 _bmo_update_dsp_ladspa(void * in, uint32_t flags)
 {
 	assert(in);
-	assert(flags);
+	(void)flags;
 	BMO_dsp_obj_t * dsp = in;
 	BMO_LADSPA_dsp_state * state = (BMO_LADSPA_dsp_state *)dsp->handle;
-	state->ld->run(state->lh, flags);
+	state->ld->run(state->lh, dsp->frames);
 	bmo_debug("\n");
 	return 0;
 }
@@ -103,7 +101,7 @@ _bmo_close_dsp_ladspa(void * in, uint32_t flags)
 
 
 BMO_dsp_obj_t *
-bmo_ladspa_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate, const char * path)
+bmo_dsp_ladspa_new(const char * path, uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
 {
 	(void) flags;
 	const LADSPA_Descriptor * ld = NULL;
@@ -134,7 +132,7 @@ bmo_ladspa_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate
 			j++;
 		}
 	}
-	bmo_debug("connected %d input ports\n", j);
+	bmo_info("connected %d input ports\n", j);
 	j = 0;
 	for(unsigned i = 0; i < ld->PortCount; i++){
 		if(LADSPA_IS_PORT_AUDIO(ld->PortDescriptors[i]) && LADSPA_IS_PORT_OUTPUT(ld->PortDescriptors[i]) ){
@@ -145,10 +143,11 @@ bmo_ladspa_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate
 	dsp->_init = _bmo_init_dsp_ladspa;
 	dsp->_update = _bmo_update_dsp_ladspa;
 	dsp->_close = _bmo_close_dsp_ladspa;
-	ld->activate(lh);
+	if(ld->activate)
+	    ld->activate(lh);
 	state->lh = lh;
 	state->ld = (void *) ld;
-	bmo_debug("connected %d output ports\n", j);
+	bmo_info("connected %d output ports\n", j);
 
 	return dsp;
 }
