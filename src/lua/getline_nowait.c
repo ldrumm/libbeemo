@@ -52,7 +52,7 @@ static const struct luaL_Reg funcs[] = {
     {NULL, NULL}
 };
 
-void bmo_reg_getline_nowait(lua_State * L, const char *table_name)
+void bmo_lua_reg_getline_nowait(lua_State * L, const char *table_name)
 {
     luaL_newlib(L, funcs);
 	lua_setglobal(L, table_name);

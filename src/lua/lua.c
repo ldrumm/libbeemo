@@ -18,6 +18,7 @@
 #include "../memory/map.h"
 #include "../util.h"
 #include "../dsp/simple.h"
+#include "getline_nowait.h"
 
 #if 0
 typedef struct
@@ -67,7 +68,7 @@ _bmo_dsp_init_lua(void * in, uint32_t flags)
 	
 	luaL_openlibs(L);
 	_bmo_lua_reg_builtin(L, dsp, dsp_name, "_dsp");
-//	_bmo_lua_reg_fio(L, dsp_name, "file");
+	bmo_lua_reg_getline_nowait(L, "async");
 	
 	int status = luaL_dostring(L, state->init_script);
 	if(status){
@@ -78,7 +79,6 @@ _bmo_dsp_init_lua(void * in, uint32_t flags)
 		return -1;
 	}
 	state->L = L;
-	
 	return 0;
 }
 
@@ -98,7 +98,7 @@ _bmo_dsp_update_lua(void * in, uint32_t flags)
 	    }
 	    dsp->flags = 1;
 	}
-	status = luaL_dostring(state->L, "\ndo dspmain() end");
+	status = luaL_dostring(state->L, "do dspmain() end");
 	if(status){
 		bmo_err("could not update DSP object:%s\n", lua_tostring(state->L, -1));
 		lua_close(state->L);

@@ -13,7 +13,7 @@ global_functions = TestingUnit{
     test_global_exists = function(self, arg)
         self:assert_true(arg ~= nil)
     end,
-    
+
     test_obj_params = function(self, func_name, env_var)
         --[[
             The DSP object's frames, channels, rate should obviously match the C
@@ -26,5 +26,3 @@ global_functions = TestingUnit{
         self:assert_equal(dsp[func_name](_dsp), expected_val)
     end,
 }
-
-

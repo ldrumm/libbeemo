@@ -13,10 +13,10 @@ end
 
 function dsp.zero(t)
     if type(t) == 'table' then
-        return dsp.zero_buffer(t.buffer, t.channels, t.frames) 
+        return dsp.zero_buffer(t.buffer, t.channels, t.frames)
     end
-        return function(buf) 
-            return dsp.zero_buffer(buf.buffer, buf.channels, buf.frames) 
+        return function(buf)
+            return dsp.zero_buffer(buf.buffer, buf.channels, buf.frames)
         end
 end
 

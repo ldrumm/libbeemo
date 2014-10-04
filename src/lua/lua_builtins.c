@@ -12,9 +12,11 @@
 #include "../dsp/simple.h"
 #include "../definitions.h"
 #include "../buffer.h"
+#include "../util.h"
+#include "../import_export.h"
 
 //Higher-order wrapper for single-buffer functions in the dsp_basics library
-static int 
+static int
 _bmo_lua_calldspfunc_sb(lua_State *L, void(*dspfunc)(float * buffer, uint32_t samples))
 {
     uint32_t ch;
@@ -28,20 +30,21 @@ _bmo_lua_calldspfunc_sb(lua_State *L, void(*dspfunc)(float * buffer, uint32_t sa
     ch = luaL_checkinteger(L, 2);
     frames = luaL_checkinteger(L, 3);
     for(uint32_t i = 0; i < ch; i++){
-        dspfunc(buf[i], frames); 
+        dspfunc(buf[i], frames);
     }
     return 0;
 }
 
 //Higher-order wrapper for oscillator functions in the dsp_basics library
 static int
-_bmo_lua_calldsposc(lua_State *L, void(*dspfunc)(float * buffer, float freq, float phase, float amplitude, uint32_t rate, uint32_t samples))
+_bmo_lua_calldsposc(lua_State *L, double(*dspfunc)(float * buffer, float freq, double phase, float amplitude, uint32_t rate, uint32_t samples))
 {
     uint32_t ch;
     uint32_t frames;
     uint32_t rate;
     float amplitude;
-    float phase;
+    double phase;
+    double ret = 0.; //phase after cycle
     float freq;
     float ** buf = NULL;
     luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "expected lightuserdata for buffer");
@@ -52,22 +55,23 @@ _bmo_lua_calldsposc(lua_State *L, void(*dspfunc)(float * buffer, float freq, flo
     ch = luaL_checkinteger(L, 2);
     frames = luaL_checkinteger(L, 3);
     freq = (float) luaL_checknumber(L, 4);
-    phase = (float) luaL_checknumber(L, 5);
+    phase = (double) luaL_checknumber(L, 5);
     amplitude = (float) luaL_checknumber(L, 6);
     rate = (uint32_t) luaL_checkinteger(L, 7);
     for(uint32_t i = 0; i < ch; i++){
-        dspfunc(buf[i], 
-            freq,  
-            phase,  
-            amplitude, 
-            rate, 
+        ret = dspfunc(buf[i],
+            freq,
+            phase,
+            amplitude,
+            rate,
             frames
         );
     }
-    return 0;
+    lua_pushnumber(L, ret);
+    return 1;
 }
 
-static int 
+static int
 _bmo_mix_sbLua(lua_State * L)
 {
     uint32_t ch;
@@ -80,7 +84,7 @@ _bmo_mix_sbLua(lua_State * L)
     inA = lua_touserdata(L, 2);
     inB = lua_touserdata(L, 3);
     if(!out || !inA || !inB){
-       return luaL_error(L, "received nil buffer"); 
+       return luaL_error(L, "received nil buffer");
     }
     ch = luaL_checkinteger(L, 4);
     frames = luaL_checkinteger(L, 5);
@@ -90,7 +94,7 @@ _bmo_mix_sbLua(lua_State * L)
     return 0;
 }
 
-static int 
+static int
 _bmo_sbcpyLua(lua_State * L)
 {
     uint32_t ch;
@@ -101,7 +105,7 @@ _bmo_sbcpyLua(lua_State * L)
     out = lua_touserdata(L, 1);
     in = lua_touserdata(L, 2);
     if(!out || !in){
-        return luaL_error(L, "received NULL buffer"); 
+        return luaL_error(L, "received NULL buffer");
     }
     ch = luaL_checkinteger(L, 3);
     frames = luaL_checkinteger(L, 4);
@@ -111,7 +115,7 @@ _bmo_sbcpyLua(lua_State * L)
     return 0;
 }
 
-static int 
+static int
 _bmo_osc_sine_mix_sbLua(lua_State * L)
 //void bmo_osc_sine_mix_sb(float * buffer, float freq, float phase, float amplitude, uint32_t rate, uint32_t samples);
 //--[[function osc_sine(float ** buffer, channels, frames, freq, phase, amplitude, rate)]]
@@ -119,19 +123,19 @@ _bmo_osc_sine_mix_sbLua(lua_State * L)
    return _bmo_lua_calldsposc(L, bmo_osc_sine_mix_sb);
 }
 
-static int 
+static int
 _bmo_osc_sq_mix_sbLua(lua_State * L)
 {
 	return _bmo_lua_calldsposc(L, bmo_osc_sq_mix_sb);
 }
 
-static int 
+static int
 _bmo_osc_saw_sbLua(lua_State * L)
 {
 	return _bmo_lua_calldsposc(L, bmo_osc_saw_sb);
 }
 
-static int 
+static int
 _bmo_gain_sbLua(lua_State * L)
 {
 	uint32_t ch;
@@ -141,7 +145,7 @@ _bmo_gain_sbLua(lua_State * L)
     luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "expected lightuserdata for buffer");
     buf = lua_touserdata(L, 1);
     if(!buf){
-        return luaL_error(L, "received NULL buffer"); 
+        return luaL_error(L, "received NULL buffer");
     }
     ch = luaL_checkinteger(L, 2);
     frames = luaL_checkinteger(L, 3);
@@ -152,13 +156,13 @@ _bmo_gain_sbLua(lua_State * L)
     return 0;
 }
 
-static int 
+static int
 _bmo_inv_sbLua(lua_State * L)
 {
 	return _bmo_lua_calldspfunc_sb(L, bmo_inv_sb);
 }
 
-static int 
+static int
 _bmo_zero_sbLua(lua_State * L)
 {
     //--zero_buffer(buffer, ch, frames)
@@ -178,11 +182,11 @@ _bmo_lua_getdsplightuserdata(lua_State *L, int stack_idx)
     return dsp;
 }
 
-static int 
+static int
 _bmo_lua_gettick(lua_State * L)
 {
     BMO_dsp_obj_t *dsp = NULL;
-    dsp = _bmo_lua_getdsplightuserdata(L, 1);  
+    dsp = _bmo_lua_getdsplightuserdata(L, 1);
     lua_pushnumber(L, (lua_Number)dsp->tick);
     return 1;
 }
@@ -192,16 +196,16 @@ static int
 _bmo_lua_getrate(lua_State *L)
 {
     BMO_dsp_obj_t *dsp = NULL;
-    dsp = _bmo_lua_getdsplightuserdata(L, 1);  
+    dsp = _bmo_lua_getdsplightuserdata(L, 1);
     lua_pushnumber(L, (lua_Number)dsp->rate);
     return 1;
 }
 
 static int
 _bmo_lua_getchannels(lua_State *L)
-{   
+{
     BMO_dsp_obj_t *dsp = NULL;
-    dsp = _bmo_lua_getdsplightuserdata(L, 1);  
+    dsp = _bmo_lua_getdsplightuserdata(L, 1);
     lua_pushnumber(L, (lua_Number)dsp->channels);
     return 1;
 }
@@ -211,7 +215,7 @@ _bmo_lua_getframes(lua_State *L)
 {   // get n frames
     //--getdspframes(dsp_pointer)
     BMO_dsp_obj_t *dsp = NULL;
-    dsp = _bmo_lua_getdsplightuserdata(L, 1);  
+    dsp = _bmo_lua_getdsplightuserdata(L, 1);
     lua_pushnumber(L, (lua_Number)dsp->frames);
     return 1;
 }
@@ -247,7 +251,7 @@ _bmo_lua_getbufferlightuserdata(lua_State *L)
         buf = dsp->out_buffers;
     else
         return luaL_error(L, "unknown buffername:%s", buffername);
-    
+
     lua_pushlightuserdata(L, buf);
     return 1;
 }
@@ -274,13 +278,13 @@ _bmo_lua_tmpbuffree(lua_State *L)
         luaL_argcheck(L, 0, 1, "expected lightuserdata for the buffer");
         return luaL_error(L, "wrong argument type for buffer");;
     }
-    
+
     void * buf = lua_touserdata(L, 1);
     bmo_mb_free(buf, channels);
     return 0;
 }
 
-static int 
+static int
 _bmo_lua_setsample(lua_State *L)
 {
     //--set(buffer_pointer, ch, idx, val)
@@ -295,13 +299,14 @@ _bmo_lua_setsample(lua_State *L)
 	idx = (uint32_t) luaL_checkinteger(L, 3);
 	luaL_argcheck(L, idx >= 1 , 3, "invalid frame index");
 	val = (float) luaL_checknumber(L, 4);
-	
+(void)val;
+	(void)buf;
 	buf[ch-1][idx-1] = (float) val;
 	
 	return 0;
 }
 
-static int 
+static int
 _bmo_lua_getsample(lua_State *L)
 {
     //--set(buffer_pointer, ch, idx)
@@ -320,6 +325,41 @@ _bmo_lua_getsample(lua_State *L)
 	return 1;
 }
 
+static int _bmo_lua_uid(lua_State *L)
+{
+    lua_pushnumber(L, bmo_uid());
+    return 1;
+}
+
+static int _bmo_lua_fopen(lua_State *L)
+{
+    luaL_argcheck(L, lua_isstring(L, 1), 1, "file path required");
+    const char * path = lua_tostring(L, 1);
+
+    //TODO flags
+/*    local buffer_obj_p, channels, rate = dsp._fopen(path, flags)*/
+    BMO_buffer_obj_t * obj = bmo_fopen(path, BMO_BUFFERED_DATA);
+    if(!obj)
+        return luaL_error(L, "failed to open '%s'", path);
+
+    lua_pushlightuserdata(L, obj);
+    lua_pushnumber(L, (lua_Number)obj->channels);
+    lua_pushnumber(L, (lua_Number)obj->rate);
+
+    return 3;
+}
+
+static int _bmo_lua_fread(lua_State *L)
+{
+    //    read from(BMO_buffer_obj_t * (1)) into a multichannel buffer (2) of channels(3), at most frames(4)
+    luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "BMO_buffer_obj_t * expected");
+    BMO_buffer_obj_t * from = lua_touserdata(L, 1);
+    float ** to = lua_touserdata(L, 2);
+    uint32_t frames = luaL_checkinteger(L, 3);
+    from->read(from, to, frames);
+
+    return 0;
+}
 static const struct luaL_Reg dsp_builtins[] =
 {
 	{"zero_buffer", _bmo_zero_sbLua},
@@ -341,6 +381,9 @@ static const struct luaL_Reg dsp_builtins[] =
     {"getdspframes", _bmo_lua_getframes},
     {"getdsptick", _bmo_lua_gettick},
     {"getdsprate", _bmo_lua_getrate},
+    {"uid", _bmo_lua_uid},
+    {"_fopen", _bmo_lua_fopen},
+    {"_fread", _bmo_lua_fread},
 	{NULL, NULL}
 	//Add new builtin functions here
 };
