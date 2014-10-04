@@ -3,7 +3,7 @@
 #include "../../src/error.h"
 #include "../../src/graph.h"
 #include "../../src/dsp_obj.h"
-
+#include "../../src/util.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>

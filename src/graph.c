@@ -58,7 +58,7 @@ bmo_update_dsp_tree(BMO_dsp_obj_t * node, uint64_t tick, uint32_t flags)
     */
     BMO_ll_t * dependency;
     if(!node){
-        bmo_err("null node");
+        bmo_err("null node\n");
         return -1;
     }
     if(!BMO_ATOM_CAS_POINTER(&node->tick, tick-1, tick)){

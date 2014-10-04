@@ -9,17 +9,13 @@
 #include "buffer.h"
 #include "drivers/ringbuffer.h"
 #include "dsp/simple.h"
+#include "graph.h"
 #define BUF 8192
 
 #ifdef _WIN32
 #include <io.h>
 #define pipe(x) _pipe((x), BMO_DEFAULT_BUF, _O_BINARY)
 #endif
-
-
-
-double phase = 90.;
-float pitch = 1000.;
 #define bmo_driver_callback_fail(state) bmo_driver_callback_done((state), BMO_DSP_STOPPED)
 #define bmo_driver_callback_success(state) bmo_driver_callback_done((state), BMO_DSP_RUNNING)
 
@@ -39,7 +35,7 @@ uint32_t bmo_wait_update(BMO_state_t* state)
         bmo_err("could not read from pipe:%s", strerror(errno));
         return BMO_DSP_STOPPED;
     }
-    return BMO_DSP_STOPPED;
+    return 0;
 }
 
 int bmo_init_ipc(BMO_state_t * state)
@@ -51,36 +47,17 @@ int bmo_init_ipc(BMO_state_t * state)
     return 0;
 }
 
-static void 
-garbage(float ** buf, uint32_t len, uint32_t channels)
-{
-    bmo_zero_mb(buf, channels, len);
-    for(uint32_t i = 0; i<channels;i++){
-        buf[i][0] = rand() / (float)RAND_MAX;    
-        buf[i][len/2] = rand() / (float)RAND_MAX;           
-        bmo_osc_sine_mix_sb(buf[i], pitch, phase, 1., 44100, len);
-//        bmo_osc_saw_sb(buf[i], pitch, phase, 10., 44100, len);
-//        bmo_osc_sq_mix_sb(buf[i], pitch, phase, 10., 44100, len);
-    }
-    pitch += (pitch * 0.5);
-}
-
 int 
-bmo_process_graph(BMO_state_t * state, int count)
+bmo_process_graph(BMO_state_t * state, BMO_dsp_obj_t * graph, size_t count)
 {
-    float ** tmp = bmo_mb_new(2, BUF);
-    assert(tmp);
-    int i =0;
-    while(bmo_wait_update(state) != BMO_DSP_STOPPED){
-//        bmo_err("upating process graph; CPU load is %f\n", state->dsp_load);
-        garbage(tmp, BUF, 2);
-        bmo_write_rb(state->ringbuffer, tmp, BUF);
-        i++;
-        if(i == count){
-            break;
-        }
+    size_t inc = count ? 1 : 0;
+    count = count ? count : 1;
+    while(bmo_wait_update(state) != BMO_DSP_STOPPED && count){
+//        bmo_debug("upating process graph; CPU load is %f\n", state->dsp_load);
+        bmo_update_dsp_tree(graph, state->n_ticks, 0);
+        state->n_ticks++;
+        count -= inc;
     }
-    bmo_mb_free(tmp, 2);
     bmo_info("engine terminated\n");
     return 0;
 }

@@ -60,7 +60,6 @@ fail:
 
 int main(int argc, char **argv)
 {
-    bmo_info("PWD is '%s'\n", getenv("PWD"));
 	bmo_verbosity(BMO_MESSAGE_DEBUG);
 	int ret = 0;
 	char * test_directory = NULL;
@@ -97,7 +96,7 @@ int main(int argc, char **argv)
 	BMO_dsp_obj_t *dsp = bmo_lua_new(0, CHANNELS, FRAMES, RATE, NULL);
 	dsp->_init(dsp, 0);
 	ret = bmo_runtests(dsp, "testingunit.lua", test_string, NULL);
-	printf("tests ran in %fs\n", stopwatch_stop());
+	bmo_info("tests ran in %fs\n", stopwatch_stop());
 	if(ret != 0){
 		bmo_err("test failure:%d\n", ret);
 	}

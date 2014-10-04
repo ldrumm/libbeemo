@@ -40,6 +40,7 @@ buffer_tests = TestingUnit{
             return t
         end
         )(),
+        test_new_buffer_zero = (function()local f={} for i=1, 10 do f[i] = {i} end return f end)(),
     },
 
     test_buffer_table_call = function(self)
