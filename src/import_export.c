@@ -1,7 +1,6 @@
 #include <string.h>
 #include <assert.h>
 #include <fenv.h>
-
 #include "definitions.h"
 #include "riff_wav.h"
 #include "sun_au.h"
@@ -15,7 +14,6 @@
 #include "sndfile.h"
 #endif
 
-
 uint32_t bmo_ftype(const char * path)
 {
 	uint32_t ret = 0;
@@ -27,8 +25,8 @@ uint32_t bmo_ftype(const char * path)
 	}
 	bmo_debug("filesize is %ld bytes", size);
 	uint32_t * file = bmo_map(path, 0, 0);
-	
-	if(!file) 
+
+	if(!file)
 		return 0;
 	else ret = file[0];
 	if(bmo_host_le())
@@ -37,35 +35,37 @@ uint32_t bmo_ftype(const char * path)
 	bmo_unmap(file, size);
 	return ret;
 }
-
-BMO_buffer_obj_t * 
+BMO_buffer_obj_t *
 bmo_fopen(const char * path, uint32_t flags)
 {
 	//naive implementation of a format tester that tests the filename only
 	BMO_buffer_obj_t * obj = NULL;
-	size_t len = strlen(path);
 	assert(path);
-	#ifdef BMO_HAVE_SNDFILE
+
+#ifdef BMO_HAVE_SNDFILE
+    (void)flags;
 	bmo_debug("using libsndfile to open '%s'\n", path);
 	obj = _bmo_fopen_sndfile(path, BMO_EXTERNAL_DATA);
 	if(!obj)
 	    bmo_err("sndfile_open failed for '%s'\n", path);
 	return obj;
-	#endif
+#else
+	size_t len = strlen(path);
 	if(strncmp(path + len - 4, ".wav", 4) == 0)
 		return bmo_fopen_wav(path, flags);
 	if(strncmp(path + len - 3, ".au", 3) == 0)
 		return bmo_fopen_sun(path, flags);
-	if(!obj){	
+	if(!obj){
 		bmo_err("open failed for '%s'\n", path);
 		return NULL;
 	}
+#endif
+    bmo_err("couldn't open %s\n", path);
 	return obj;
 }
-
-size_t 
+size_t
 bmo_fwrite_mb(FILE * file, float ** in_buf, uint32_t channels, uint32_t out_fmt, uint32_t frames, uint32_t dither)
-{	
+{
 	bmo_debug("\n");
 	uint32_t i;
 	char * tmp = malloc(frames * channels * bmo_fmt_stride(out_fmt));
@@ -74,10 +74,10 @@ bmo_fwrite_mb(FILE * file, float ** in_buf, uint32_t channels, uint32_t out_fmt,
 		bmo_err("alloc failure\n");
 		return 0;
 	}
-	
+
 	fesetround(FE_TONEAREST);	//should be true in c99/posix
 	bmo_conv_mftoix(tmp, in_buf, channels, out_fmt, frames);
-	
+
 	if(bmo_fmt_pcm(out_fmt))
 	{
 		switch(dither)
@@ -86,16 +86,15 @@ bmo_fwrite_mb(FILE * file, float ** in_buf, uint32_t channels, uint32_t out_fmt,
 			case BMO_DITHER_SHAPED: assert("shaped dither not yet implemented" == NULL);break;
 			default:break;
 		}
-	}	
-	
+	}
+
 	i = fwrite(tmp, 1, frames * channels * bmo_fmt_stride(out_fmt), file);
 	free(tmp);
 	return i;
 }
-
-size_t 
+size_t
 bmo_fwrite_ib(FILE * file, void * in, uint32_t channels, uint32_t out_fmt, uint32_t in_fmt, uint32_t frames, uint32_t dither)
-{	
+{
 	bmo_debug("\n");
 	uint32_t i;
 	char * tmp = malloc(frames * channels * bmo_fmt_stride(out_fmt));
@@ -104,7 +103,7 @@ bmo_fwrite_ib(FILE * file, void * in, uint32_t channels, uint32_t out_fmt, uint3
 		bmo_err("alloc failure\n");
 		return 0;
 	}
-	
+
 	bmo_conv_ibtoib(tmp, in, out_fmt, in_fmt, frames * channels);
 	switch(dither)
 	{

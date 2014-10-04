@@ -358,7 +358,7 @@ _bmo_fmt_pcm_range(uint32_t fmt)
 	assert(0);
 }
 
-#define _bmo_to_native_must_swap(x)((bmo_fmt_end((x)) ^ bmo_host_endianness()) == 0)
+#define _bmo_to_native_must_swap(x)((bmo_fmt_end((x)) != bmo_host_endianness()))
 
 void 
 bmo_conv_iftoif(void * out, void * in, uint32_t fmt_out, uint32_t fmt_in, uint32_t samples)

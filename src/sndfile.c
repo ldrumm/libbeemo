@@ -22,7 +22,10 @@ _bmo_get_bo_sndfile(void * bo, float **dest, uint32_t frames)
 	    bmo_zero_mb(dest, obj->channels, frames);
 	    return -1;
 	}
-	sf_count_t read = sf_readf_float(obj->handle, buffer, (sf_count_t) frames) ;
+	sf_count_t read = sf_readf_float(obj->handle, buffer, (sf_count_t) frames);
+	if(read < frames){
+	    bmo_zero_mb_off(dest, obj->channels, frames - read, read);
+	}
 	bmo_conv_ibftomb(dest, (char *) buffer, obj->channels, (uint32_t)read, BMO_FMT_NATIVE_FLOAT);
 	free(buffer);
 	return read;
