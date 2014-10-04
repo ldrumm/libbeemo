@@ -32,7 +32,10 @@ static void init(BMO_dsp_obj_t * dsp)
             "   end\n"\
             "end\n"\
         "end\n";
-    luaL_dostring(lua_dsp->L, script);
+   if(luaL_dostring(lua_dsp->L, script) != 0){
+        bmo_err("failed to load script:[[%s]]\n", script);
+        exit(EXIT_FAILURE);
+   };
 }
 
 int main(int argc, char ** argv)
@@ -62,7 +65,7 @@ int main(int argc, char ** argv)
             "self[#self+1] = val end\n"
         "})\n "
         "o = dsp.sys()\n"
-        "i = dsp.sys('in')\n"
+        "i = dsp.sys('in')\n"git s
         "function dspmain()\n"
             "debug.repl(); dsp.sys():zero()\n"
 
