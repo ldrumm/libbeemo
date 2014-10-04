@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
             "self[#self+1] = val end\n"
         "})\n "
         "o = dsp.sys()\n"
-        "i = dsp.sys('in')\n"git s
+        "i = dsp.sys('in')\n"
         "function dspmain()\n"
             "debug.repl(); dsp.sys():zero()\n"
 
