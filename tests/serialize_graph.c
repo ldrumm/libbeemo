@@ -242,7 +242,7 @@ dsp_top_a       dsp_top_b
     int ret = 0;
     char output_file[BUF_LEN];
 
-    strcpy(output_file, "bmo-tmp-XXXXXX");
+    strcpy(output_file, "tmp-serialize-graph-XXXXXX");
     if(!mkstemp(output_file)){
         bmo_err("couldn't created temp file:'%s'", strerror(errno));
         exit(EXIT_FAILURE);

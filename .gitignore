@@ -69,3 +69,4 @@ experiments/
 
 .scons*
 src/lua/lua_default_text.h
+prepush.sh

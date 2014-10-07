@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "lib/compiler.c"
+
 #include "../src/memory/map.h"
 #include "../src/error.h"
 
@@ -32,8 +34,8 @@ test_file(char * path, char bytepattern, size_t len)
     return 0;
 }
 
-int
-test_func(const char * target, const char * funcname)
+char *
+test_func(const char * funcname)
 {
 
     #ifdef WIN32
@@ -41,40 +43,21 @@ test_func(const char * target, const char * funcname)
     #else
     char export[] = "";
     #endif
-    FILE * source_file;
-    char source_path[BUF_LEN];
-    char compiler_command[BUF_LEN];
-    int ok;
+    char source[BUF_LEN];
+    snprintf(
+        source,
+        BUF_LEN,
 
-    snprintf(source_path, BUF_LEN-1, "%s.c", target);
-    source_file = fopen(source_path, "w");
-    assert(source_file);
-    fprintf(
-        source_file,
-        "#include <stdio.h>\n"\
-            "%s void %s(int *i){"\
-            "*i *= 2;"
+        "#include <stdio.h>\n"
+        "%s void %s(int *i){\n"
+            "*i *= 2;\n"
+            "printf(\"hello fromtes\");\n"
             "}\n\n",
         export,
         funcname
     );
-    fflush(source_file);
-
-    snprintf(compiler_command,
-        BUF_LEN,
-        "gcc -shared -fPIC %s -o %s",
-        source_path,
-        target
-    );
-    bmo_info("building test shared-lib with command '%s\n'", compiler_command);
-
-    ok = system(compiler_command);
-    if(!ok==0){
-        fprintf(stderr, "%s did not compile with the command '%s'\n", target, compiler_command);
-        return -1;
-    }
-    remove(source_path);
-    return ok;
+    bmo_info("building test shared-lib\n");
+    return compile_string(source, "-fPIC -shared", "so");
 }
 
 int
@@ -83,6 +66,7 @@ main(void)
     bmo_verbosity(BMO_MESSAGE_DEBUG);
 
     int failure = 0;
+    char * shared_obj_path = NULL;
     char map_path[BUF_LEN];
     strcpy(map_path, "test_map-XXXXXX");
     if(test_file(map_path, 0x0f, FILE_LEN) == -1){
@@ -99,18 +83,22 @@ main(void)
     }
     bmo_unmap(map, size);
 
-    if(!test_func("hello", "test_func") == 0){
+    /*******************can we load symbols?*******************************/
+    shared_obj_path = test_func("test_func");
+    if(!shared_obj_path){
         assert("couldn't compile test function'" && 0);
         return 1;
     };
     void (*func)(int *);
-    func = bmo_loadlib("./hello", "test_func");
+    func = bmo_loadlib(shared_obj_path, "test_func");
     assert(func != NULL);
     int i = 2;
     func(&i);
     assert(i == 4);
+
 cleanup:
     remove(map_path);
-    remove("hello");
+    remove(shared_obj_path);
+    free(shared_obj_path);
     return failure;
 }
