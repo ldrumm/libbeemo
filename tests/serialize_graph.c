@@ -116,7 +116,7 @@ serialize_deps(BMO_dsp_obj_t * node){
     size_t n_chars = 0;
     BMO_ll_t * dep = node->in_ports;
     while(dep){
-        snprintf(buf, sizeof(buf)-1, "%zu, ", ((BMO_dsp_obj_t *)dep->data)->id);
+        snprintf(buf, sizeof(buf)-1, "%llu, ",  (unsigned long long)((BMO_dsp_obj_t *)dep->data)->id);
         n_chars += strlen(buf);
         dep = dep->next;
     }
@@ -127,7 +127,7 @@ serialize_deps(BMO_dsp_obj_t * node){
     // Do the actual filling of the buffer now we know how long the result string will be
     dep = node->in_ports;
     while(dep){
-        snprintf(buf, sizeof(buf)-1, "%zu, ", ((BMO_dsp_obj_t *)dep->data)->id);
+        snprintf(buf, sizeof(buf)-1, "%llu, ", (unsigned long long)((BMO_dsp_obj_t *)dep->data)->id);
         strncat(retbuf, buf, strlen(buf));
         dep = dep->next;
     }
@@ -175,8 +175,8 @@ serialize_callback(BMO_dsp_obj_t * node, void * userdata)
     char * data = serializer->callback(node);
     fprintf(
         serializers->file,
-        "dsp{id=%lu, type=\"%s\", data=%s, inputs={%s}, channels=%d, rate=%d}\n",
-        node->id,
+        "dsp{id=%llu, type=\"%s\", data=%s, inputs={%s}, channels=%d, rate=%d}\n",
+         (unsigned long long)node->id,
         serializer->name,
         data,
         deps,

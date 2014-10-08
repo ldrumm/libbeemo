@@ -172,7 +172,7 @@ _bmo_swap_ib(void * data, uint32_t stride, size_t len)
 	switch(stride)
 	{
 		case 1: return;		// single byte variables don't have endianness - do nothing
-		case 2:
+		case 2:{
 		;
 			uint16_t * p16 = (uint16_t *) data;
 			while(i < len)
@@ -182,7 +182,8 @@ _bmo_swap_ib(void * data, uint32_t stride, size_t len)
 				i++;
 			}
 			break;
-		case 3:
+		}
+		case 3:{
 		;
 			char * p8 = (char *) data;
 			while(i < len)
@@ -192,7 +193,8 @@ _bmo_swap_ib(void * data, uint32_t stride, size_t len)
 				i++;
 			}
 			break;
-		case 4:
+		}
+		case 4:{
 		;
 			uint32_t *p32 = (uint32_t *) data;
 			while(i < len)
@@ -202,7 +204,8 @@ _bmo_swap_ib(void * data, uint32_t stride, size_t len)
 				i++;
 			}
 			break;
-		case 8:
+		}
+		case 8:{
 		;
 			uint64_t *p64 = (uint64_t *) data;
 			while(i < len)
@@ -212,7 +215,8 @@ _bmo_swap_ib(void * data, uint32_t stride, size_t len)
 				i++;
 			}
 			break;
-			default:assert(0);	
+		}
+	    default:assert(0);
 	}
 	return;
 }
