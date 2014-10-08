@@ -70,7 +70,7 @@ int bmo_driver_close(BMO_state_t * state)
 {
     switch(state->driver_id){
         #ifdef BMO_HAVE_PORTAUDIO
-        case BMO_PORTAUDIO_DRIVER:
+        case BMO_PORTAUDIO_DRIVER:{
             ;
             PaError pa_err = Pa_CloseStream(state->driver.pa.stream);
             if(pa_err != paNoError){
@@ -79,9 +79,10 @@ int bmo_driver_close(BMO_state_t * state)
             }
             Pa_Terminate();
             break;
+        }
         #endif
         #ifdef BMO_HAVE_JACK
-        case BMO_JACK_DRIVER:
+        case BMO_JACK_DRIVER:{
             ;
             int err = jack_client_close(state->driver.jack.client);
             if(err){
@@ -89,6 +90,7 @@ int bmo_driver_close(BMO_state_t * state)
             }
             break;
         #endif
+        }
         default:{
             assert(0);
             bmo_err("cannot stop unkown driver:%d\n", state->driver_id);
