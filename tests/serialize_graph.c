@@ -67,7 +67,7 @@ serialize_lua_object(BMO_dsp_obj_t *node)
     char * serialized = calloc(serialized_len, sizeof(char));
     snprintf(
         serialized,
-        serialized_len - 1,
+        serialized_len,
         "%s%s%s",
         open_brackets,
         ((BMO_lua_context_t *)node->handle)->user_script,
@@ -248,7 +248,7 @@ dsp_top_a       dsp_top_b
     }
     BMO_dsp_obj_t * dsps[N_DSPS];
     for(size_t i = 0; i < N_DSPS; i++){
-         dsps[i] = bmo_lua_new(0, CHANNELS, FRAMES, RATE, "function dspmain() os.time() end");
+         dsps[i] = bmo_dsp_lua_new(0, CHANNELS, FRAMES, RATE, "function dspmain() os.time() end", 0);
          dsps[i]->_init(dsps[i], 0);
          if(i > 0)
             bmo_dsp_connect(dsps[i -1], dsps[i], 0);
