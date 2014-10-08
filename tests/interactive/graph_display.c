@@ -21,7 +21,7 @@ int graphviz_callback(BMO_dsp_obj_t * node, void * userdata){
     FILE * file = userdata;
     BMO_ll_t * dependency = node->in_ports;
     while(dependency){
-        fprintf(file,"%lu -> %lu;\n", ((BMO_dsp_obj_t *)dependency->data)->id, node->id);
+        fprintf(file,"%llu -> %llu;\n",  (unsigned long long)((BMO_dsp_obj_t *)dependency->data)->id, (unsigned long long)node->id);
         dependency = dependency->next;
     }
     return 0;
