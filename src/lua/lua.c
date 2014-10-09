@@ -113,8 +113,10 @@ bmo_dsp_lua_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rat
 	if(user_script){
 	    if(!script_len){
 	        script_len = strlen(user_script);
-	    }
-        script = bmo_strdupb(user_script, script_len);
+	        script = bmo_strdup(user_script);
+	    }else{
+            script = bmo_strdupb(user_script, script_len);
+        }
         if(!script){
 		    bmo_err("Lua script could not be loaded:%s\n", errno ? strerror(errno):"");
 		    return NULL;
