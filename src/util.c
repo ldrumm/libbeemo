@@ -29,12 +29,13 @@ char *
 bmo_strdup(const char * txt)
 {
 //we supply a strdup-like functionality because the strdup family are non-portable
-    size_t len = strlen(txt) + 1;
-    char * s = malloc(len);
+    size_t len = strlen(txt);
+    char * s = malloc(len + 1);
     if(!s){
         bmo_err("couldn't duplicate string:%s\n", strerror(errno));
         return NULL;
     }
+    s[len] = '\0';
     return memcpy(s, txt, len);
 }
 

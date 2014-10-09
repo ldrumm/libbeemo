@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 	setenv("BMO_RATE", env_buf, 1);
 
 	stopwatch_start();
-	BMO_dsp_obj_t *dsp = bmo_lua_new(0, CHANNELS, FRAMES, RATE, NULL);
+	BMO_dsp_obj_t *dsp = bmo_dsp_lua_new(0, CHANNELS, FRAMES, RATE, NULL, 0);
 	dsp->_init(dsp, 0);
 	ret = bmo_runtests(dsp, "testingunit.lua", test_string, NULL);
 	bmo_info("tests ran in %fs\n", stopwatch_stop());

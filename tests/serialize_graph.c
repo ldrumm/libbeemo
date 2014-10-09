@@ -55,11 +55,12 @@ static char *
 serialize_lua_object(BMO_dsp_obj_t *node)
 {
     size_t n_equals_signs = _max_consecutive_x(((BMO_lua_context_t *)node->handle)->user_script, '=') + 1;
-    char * open_brackets = calloc((n_equals_signs * 2) + 5, sizeof(char));
-    char * close_brackets = calloc((n_equals_signs * 2) + 5, sizeof(char));
+    char * open_brackets = calloc((n_equals_signs) + 3, sizeof(char));
+    char * close_brackets = calloc((n_equals_signs) + 3, sizeof(char));
 
-    snprintf(open_brackets, (n_equals_signs* 2) + 4, "[%*c", (int)n_equals_signs+1, '[');
-    strchrsubs(open_brackets, ' ', '=');
+    memset(open_brackets + 1, '=', (n_equals_signs));
+    open_brackets[0] = '[';
+    open_brackets[n_equals_signs + 1] = '[';
     strncpy(close_brackets, open_brackets, strlen(open_brackets));
     strchrsubs(close_brackets, '[', ']');
 
@@ -67,13 +68,12 @@ serialize_lua_object(BMO_dsp_obj_t *node)
     char * serialized = calloc(serialized_len, sizeof(char));
     snprintf(
         serialized,
-        serialized_len - 1,
+        serialized_len,
         "%s%s%s",
         open_brackets,
         ((BMO_lua_context_t *)node->handle)->user_script,
         close_brackets
     );
-
     free(open_brackets);
     free(close_brackets);
 
@@ -248,11 +248,10 @@ dsp_top_a       dsp_top_b
     }
     BMO_dsp_obj_t * dsps[N_DSPS];
     for(size_t i = 0; i < N_DSPS; i++){
-         dsps[i] = bmo_lua_new(0, CHANNELS, FRAMES, RATE, "function dspmain() os.time() end");
+         dsps[i] = bmo_dsp_lua_new(0, CHANNELS, FRAMES, RATE, "a = [=[My name is ====]]]=];function dspmain() os.time() end", 0);
          dsps[i]->_init(dsps[i], 0);
          if(i > 0)
             bmo_dsp_connect(dsps[i -1], dsps[i], 0);
-
     }
 
     bmo_update_dsp_tree(dsps[N_DSPS-1], 1, 0);

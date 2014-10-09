@@ -51,26 +51,27 @@ int main(int argc, char ** argv)
     uint32_t driver = getenv("JACK") ? BMO_JACK_DRIVER : 0;
     BMO_state_t * state = bmo_new_state();
     state->ringbuffer = bmo_init_rb(FRAMES, CHANNELS);
-    BMO_dsp_obj_t * dsp = bmo_lua_new(
+    BMO_dsp_obj_t * dsp = bmo_dsp_lua_new(
         0,
         CHANNELS,
         FRAMES,
         RATE,
-        "io.write('[~]');io.flush()\n"
-        "out = setmetatable({\n"
-            "pop=function(self, k)\n"
-                "table.remove(self, k)\n"
+        "io.write('[~]');io.flush()"
+        "out = setmetatable({"
+            "pop=function(self, k)"
+                "table.remove(self, k)"
             "end\n"
-        "}, {__call=function(self, val)\n"
-            "self[#self+1] = val end\n"
-        "})\n "
-        "o = dsp.sys()\n"
+        "}, {__call=function(self, val)"
+            "self[#self+1] = val end"
+        "})"
+        "o = dsp.sys()"
         "i = dsp.sys('in')\n"
         "function dspmain()\n"
-            "debug.repl(); dsp.sys():zero()\n"
-
+            "o:zero()\n"
+            "debug.repl();\n"
             "for n in ipairs(out) do o{out[n]} end\n"
-        " end"
+        " end",
+        0
     );
     dsp->_init(dsp, 0);
     init(dsp);
