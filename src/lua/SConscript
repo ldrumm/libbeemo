@@ -5,17 +5,13 @@ from SCons.Errors import BuildError
 
 Import('env')
 
-
-def c_escape_string(s):
-    return s.replace('\n', '\\n\\\n').replace('"', '\\"')
-
 def raise_for_status(s, msg, except_class=BuildError):
     if s:
         raise except_class(msg)
 
 def remove_trailing_slash(s):
     #special case:
-    if s == '/': 
+    if s == '/':
         return s
     while s.endswith('/'):
     	s = s[:-1]
@@ -24,15 +20,15 @@ def remove_trailing_slash(s):
 def build_sources_list(dirs, extn):
     if not extn.startswith('.'):
         extn = '.' + extn
-        
+
     if not hasattr(dirs, '__iter__'):
         dirs=(dirs,)
     sources = list()
-    
+
     for f in dirs:
         f = remove_trailing_slash(f)
         sources += [f + '/' + x for x in os.listdir(f) if x.endswith(extn)]
-    
+
     return sources
 
 def get_debug_source(sources):
@@ -42,15 +38,22 @@ def get_debug_source(sources):
         with open(str(source)) as f:
             text = f.read()
             if text:
-                raise_for_status(os.system(" luac -p %s" % source), "couldn't parse lua source")
+                raise_for_status(
+                    os.system(" luac -p %s" % source),
+                    "couldn't parse lua source"
+                )
             strlen += len(text)
         out += ''.join(['\\x%s' % base64.b16encode(x) for x in text])
-    
+
     return out, strlen
 
 def get_compiled_source(sources):
     sources = [str(source) for source in sources]
-    raise_for_status(os.system('luac -s %s' % ' '.join(sources)), "failed to compile Lua source")
+    raise_for_status(
+        os.system('luac -s %s' % ' '.join(sources)),
+        "failed to compile Lua source"
+    )
+
     with open(os.path.dirname(os.path.dirname('__file__')) + 'luac.out') as f:
         text = f.read()
     strlen = len(text)
@@ -63,16 +66,19 @@ def split_escaped(script, seg_length=19):
     return string.join(['"' + string.join(match[x:x+seg_length], '') + \
         '" \\\n' for x in range(0, len(match), seg_length)], "").rstrip('\\\n')
 
-def writeout(outpath, objcode, codelen):
-    outstart = '''#ifndef BMO_LUA_DEFAULT_TEXT_H
+def writeout(path, script, script_len):
+    script = split_escaped(script)
+    content = '''#ifndef BMO_LUA_DEFAULT_TEXT_H
 #define BMO_LUA_DEFAULT_TEXT_H
-const char * BMO_LUA_INIT_SCRIPT = \\
-'''
-    with open(outpath, 'w') as outf:
-        outf.write(outstart)
-        outf.write(split_escaped(objcode) + ';')
-        outf.write('\nconst size_t BMO_LUA_INIT_SCRIPT_LEN = %s;\n  ' % codelen)
-        outf.write('\n#endif\n\n')
+
+const size_t BMO_LUA_INIT_SCRIPT_LEN = %(script)s;
+const char * BMO_LUA_INIT_SCRIPT = %(script_len)s;
+
+#endif
+''' % locals()
+    with open(path, 'w') as f:
+        f.write(content)
+
 
 def compile_lua_sources(target=None, source=None, env=None):
     print('compiling Lua sources...')
@@ -87,6 +93,6 @@ COMPILED_LUA_OUTFILE = os.path.join(LUA_DIR, 'lua_default_text.h')
 ALL_LUA_SOURCES = build_sources_list(LUA_LIBS_DIR, 'lua')
 
 # The control file should be updated when any of the lua sources change
-env.Depends(COMPILED_LUA_OUTFILE, [f for f in ALL_LUA_SOURCES])
+env.Depends(COMPILED_LUA_OUTFILE, ALL_LUA_SOURCES)
 env.Command(COMPILED_LUA_OUTFILE, ALL_LUA_SOURCES, compile_lua_sources)
 

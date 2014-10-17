@@ -1,63 +1,66 @@
 import sys
 import os
+import multiprocessing
+
 
 def release(env):
-    env.Append(CCFLAGS=['-O2'])
-#    env.Append(CCFLAGS=['-ffast-math'])
-    env.Append(CCFLAGS=['-DNDEBUG'])
-#    env.Append(CCFLAGS=['-mtune=native'])
+    env.Append(CCFLAGS=['-O2', '-mtune=native', '-ffast-math'])
+    env.Append(CPPDEFINES=['NDEBUG'])
 
 def profile(env):
-    env.Append(CCFLAGS=['-O2'])
-    env.Append(CCFLAGS=['-ffast-math'])
-    env.Append(CCFLAGS=['-g'])
+    env.Append(CCFLAGS=['-O2', '-ffast-math', '-g'])
 
 def std_switches(env):
-    env.Append(CCFLAGS=['-std=c99',])
-    env.Append(CCFLAGS=['-Wall',])
-    env.Append(CCFLAGS=['-Wextra',])
-    env.Append(CCFLAGS=['-Werror',])
+    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror'])
 
 def check_dependencies(env, conf):
     config = {}
     config['endian'] = sys.byteorder
-    config['have_jack'] = bool(conf.CheckLibWithHeader('jack', ['jack/jack.h', 'jack/types.h'], 'C'))
-    config['have_pthread'] = bool(conf.CheckLibWithHeader('pthread', 'pthread.h', 'C' ))
-    config['have_lua'] = bool(conf.CheckLibWithHeader('lua5.2', ['lua5.2/lua.h','lua5.2/lauxlib.h'], 'C'))
+    config['have_jack'] = conf.CheckLibWithHeader(
+        'jack', ['jack/jack.h', 'jack/types.h'], 'C'
+    )
+    config['have_pthread'] = conf.CheckLibWithHeader(
+        'pthread', 'pthread.h', 'C'
+    )
+    config['have_lua'] = conf.CheckLibWithHeader(
+        'lua5.2', ['lua5.2/lua.h','lua5.2/lauxlib.h'], 'C'
+    )
 
     #Fallback for systems with non-versioned libs
     if not config['have_lua']:
-        config['have_lua'] = bool(conf.CheckLibWithHeader('lua', ['lua5.2/lua.h','lua5.2/lauxlib.h'], 'C'))
-    config['have_sndfile'] = bool(conf.CheckLibWithHeader('sndfile', 'sndfile.h', 'C'))
-    config['have_portaudio'] = bool(conf.CheckLibWithHeader( 'portaudio', 'portaudio.h', 'C'))
-    config['have_ladspa'] = bool(conf.CheckHeader( 'ladspa.h'))
+        config['have_lua'] = conf.CheckLibWithHeader(
+            'lua', ['lua5.2/lua.h','lua5.2/lauxlib.h'], 'C'
+        )
+    config['have_sndfile'] = conf.CheckLibWithHeader(
+        'sndfile', 'sndfile.h', 'C'
+    )
+    config['have_portaudio'] = conf.CheckLibWithHeader(
+        'portaudio', 'portaudio.h', 'C'
+    )
+    config['have_ladspa'] = conf.CheckHeader('ladspa.h')
     if not config['have_lua']:
-        raise StandardError('Essential dependencies not found; cannot build without Lua')
+        raise BuildError('Essential dependencies not found; cannot build without Lua')
     return config
 
 def get_preprocessor_switches(env, config):
     """
-    receives a list of configure options, then mangles the key and value to create
-    C preprocessor defines tailored to the compiler in use.
+    receives a list of configure options, then mangles the key and value to
+    create C preprocessor defines.
 
-    e.g. if 'config' contains the key 'have_portaudio', and we have portaudio, then the define emitted
-    is "/DBMO_HAVE_PORTAUDIO" on msvc or "-DBMO_HAVE_PORTAUDIO for gcc"
-    This is real hackish, but I'll live.
-
-    If the value of the key/value pair is a string, then that string is appended to the key
-    e.g. a big-endian system defines "-DBMO_ENDIAN_BIG when using gcc and /DBMO_ENDIAN_BIG for cl.exe
+    If the value of the key/value pair is a string, then that string is appended
+    to the key e.g. a big-endian system defines "-DBMO_ENDIAN_BIG when using
+    gcc and /DBMO_ENDIAN_BIG for cl.exe
     """
     defines = []
-    dp = env.Dictionary()['CPPDEFPREFIX']
     for key in config:
         if(type(config[key]) != bool):
-            defines.extend([dp + "BMO_" + key.upper()+ "_" + str(config[key]).upper()])
+            defines.extend(["BMO_" + key.upper()+ "_" + str(config[key]).upper()])
         elif((type(config[key]) == bool) and config[key] == True):
-            defines.extend([dp + "BMO_"+ key.upper() ])
+            defines.extend(["BMO_"+ key.upper() ])
     return defines
 
-
-env = Environment(ENV=os.environ)
+SetOption('num_jobs', multiprocessing.cpu_count())
+env = Environment()
 env["CC"] = os.getenv("CC") or env["CC"]
 std_switches(env)
 
@@ -67,7 +70,7 @@ if os.name == 'nt':
     env = Environment(ENV=os.environ, tools=['mingw'])
 
     #mingw doesn't allow including unistd.h in c99 mode:
-    #    http://sourceforge.net/p/mingw/bugs/2046/
+    #http://sourceforge.net/p/mingw/bugs/2046/
     try:
         i = env['CCFLAGS'].index('-std=c99')
         env['CCFLAGS'][i] = '-std=gnu99'
@@ -82,9 +85,6 @@ if ARGUMENTS.get('analyse', False):
     env["CXX"] = os.getenv("CXX") or env["CXX"]
     env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
 
-if ARGUMENTS.get('clang', 0):
-    env.Replace(CC='clang')
-
 if env.GetOption('clean'):
     deps = {}
 else:
@@ -93,10 +93,10 @@ else:
     env = conf.Finish()
 
 ######  get compiler switches  ##########
-env.Append(CCFLAGS=get_preprocessor_switches(env, deps))
+env.Append(CPPDEFINES=get_preprocessor_switches(env, deps))
 std_switches(env)
-if ARGUMENTS.get('release', False):
-    print "Building in release mode with optimisations"
+if ARGUMENTS.get('release', '').lower() in ('1', 'true', 'yes') :
+    print("Building in release mode with optimisations")
     release(env)
 
 elif ARGUMENTS.get('profile', None):

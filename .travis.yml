@@ -1,8 +1,11 @@
 language: c
+env:
+    RELEASE='release=true'
+    RELEASE='release=false'
 compiler:
   - gcc
   - clang
-script: source tests/activate && scons tests
+script: source tests/activate && scons tests $RELEASE
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq valgrind portaudio19-dev libjack-dev ladspa-sdk liblua5.2-dev libsndfile1-dev lua5.2 alsa-utils
