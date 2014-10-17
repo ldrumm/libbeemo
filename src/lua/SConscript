@@ -71,8 +71,8 @@ def writeout(path, script, script_len):
     content = '''#ifndef BMO_LUA_DEFAULT_TEXT_H
 #define BMO_LUA_DEFAULT_TEXT_H
 
-const size_t BMO_LUA_INIT_SCRIPT_LEN = %(script)s;
-const char * BMO_LUA_INIT_SCRIPT = %(script_len)s;
+const size_t BMO_LUA_INIT_SCRIPT_LEN = %(script_len)s;
+const char * BMO_LUA_INIT_SCRIPT = %(script)s;
 
 #endif
 ''' % locals()
