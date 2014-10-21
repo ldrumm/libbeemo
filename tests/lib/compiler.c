@@ -50,7 +50,7 @@ char * compile_string(const char *code, const char *args, const char *suffix){
     char target_path[BMO_TEST_COMPILER_BUF];
     char cwd[BMO_TEST_COMPILER_BUF];
     if(!getcwd(cwd, BMO_TEST_COMPILER_BUF)){
-        fprintf("couldn't get PWD");
+        fprintf(stderr, "couldn't get PWD\n");
         return NULL;
     };
     snprintf(source_path, BMO_TEST_COMPILER_BUF, "beemo_tmp_source-XXXXXX");
