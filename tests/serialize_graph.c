@@ -135,7 +135,8 @@ serialize_deps(BMO_dsp_obj_t * node){
 }
 
 struct bmo_dsp_serializer_callback_reg_t {
-    char * (*callback)(BMO_dsp_obj_t *);
+    char * (*serialize)(BMO_dsp_obj_t *);
+    BMO_dsp_obj_t * (*unserialize)(void); //decide on params
     uint32_t type;
     char * name;
 };
@@ -149,7 +150,7 @@ static struct bmo_dsp_serializer_callback_reg_t *
 get_dsp_serializer(const struct bmo_dsp_serializer_t * _serializers, BMO_dsp_obj_t * node)
 {
     struct bmo_dsp_serializer_callback_reg_t * serializers = _serializers->serializers;
-    while(serializers->callback){
+    while(serializers->serialize){
         if(node->type == serializers->type){
             return serializers;
         }
@@ -172,7 +173,7 @@ serialize_callback(BMO_dsp_obj_t * node, void * userdata)
         bmo_err("serializer not found for type'%u'", node->type);
         return -1;
     }
-    char * data = serializer->callback(node);
+    char * data = serializer->serialize(node);
     fprintf(
         serializers->file,
         "dsp{id=%llu, type=\"%s\", data=%s, inputs={%s}, channels=%d, rate=%d}\n",
@@ -190,11 +191,11 @@ serialize_callback(BMO_dsp_obj_t * node, void * userdata)
 }
 
 static struct bmo_dsp_serializer_callback_reg_t reg[] = {
-    {serialize_lua_object, BMO_DSP_OBJ_LUA, "lua"},
-    {serialize_bo_object, BMO_DSP_OBJ_BO, "buffer"},
-    {serialize_ladspa_object, BMO_DSP_OBJ_LADSPA, "ladspa"},
-    {serialize_rb_object, BMO_DSP_OBJ_RB, "ringbuffer"},
-    {NULL, 0, NULL}
+    {serialize_lua_object, NULL, BMO_DSP_OBJ_LUA, "lua"},
+    {serialize_bo_object, NULL, BMO_DSP_OBJ_BO, "buffer"},
+    {serialize_ladspa_object, NULL, BMO_DSP_OBJ_LADSPA, "ladspa"},
+    {serialize_rb_object, NULL, BMO_DSP_OBJ_RB, "ringbuffer"},
+    {NULL, NULL, 0, NULL}
 };
 
 int serialize(
