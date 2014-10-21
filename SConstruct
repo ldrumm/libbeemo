@@ -60,7 +60,7 @@ def get_preprocessor_switches(env, config):
     return defines
 
 SetOption('num_jobs', multiprocessing.cpu_count())
-env = Environment()
+env = Environment(ENV=os.environ)
 env["CC"] = os.getenv("CC") or env["CC"]
 std_switches(env)
 
