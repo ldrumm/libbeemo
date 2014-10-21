@@ -355,8 +355,11 @@ static int _bmo_lua_fread(lua_State *L)
     luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "BMO_buffer_obj_t * expected");
     BMO_buffer_obj_t * from = lua_touserdata(L, 1);
     float ** to = lua_touserdata(L, 2);
-    uint32_t frames = luaL_checkinteger(L, 3);
-    from->read(from, to, frames);
+    int frames = luaL_checkinteger(L, 3);
+    if(from->read(from, to, frames) < frames ){
+        lua_pushboolean(L, 0);
+        return 1;
+    };
 
     return 0;
 }

@@ -15,33 +15,9 @@
 #define FRAMES 512
 #define RATE 44100
 
-static void init(BMO_dsp_obj_t * dsp)
-{
-    BMO_lua_context_t * lua_dsp = (BMO_lua_context_t *)dsp->handle;
-    char script[] =
-        "function debug.repl()\n"\
-            "line = async.getline()\n"\
-            "if #line > 1 then\n"\
-            "   func = loadstring(line)\n"\
-            "   if func then "\
-            "        local ok, msg = pcall(func)\n"\
-            "        if not ok then \n"\
-            "          print(msg)\n"\
-            "       end \n"\
-            " io.write('[~]');io.flush()\n"\
-            "   end\n"\
-            "end\n"\
-        "end\n";
-   if(luaL_dostring(lua_dsp->L, script) != 0){
-        bmo_err("failed to load script:[[%s]]\n", script);
-        exit(EXIT_FAILURE);
-   };
-}
-
 int main(int argc, char ** argv)
 {
     bmo_verbosity(BMO_MESSAGE_INFO);
-
 
     if(argc < 2){
         bmo_err("missing required argument (path to audiofile\n");
@@ -68,13 +44,13 @@ int main(int argc, char ** argv)
         "i = dsp.sys('in')\n"
         "function dspmain()\n"
             "o:zero()\n"
-            "debug.repl();\n"
+            "async.repl();\n"
             "for n in ipairs(out) do o{out[n]} end\n"
-        " end",
+        " end;"
+        ,
         0
     );
     dsp->_init(dsp, 0);
-    init(dsp);
     BMO_dsp_obj_t * file = bmo_dsp_bo_new_fopen(path, 0, FRAMES);
     BMO_dsp_obj_t * rb = bmo_dsp_rb_new(
         state->ringbuffer,

@@ -81,9 +81,9 @@ _bmo_dsp_update_lua(void * in, uint32_t flags)
 	lua_rawgeti(state->L, LUA_REGISTRYINDEX, state->dspmain_ref);
 	int status = lua_pcall(state->L, 0, LUA_MULTRET, 0);
 	if(status){
-	        bmo_err("user script failed:%s\n", lua_tostring(state->L, -1));
-	        //not zeroing the buffers may cause earache on failure.
-	        bmo_zero_mb(dsp->out_buffers, dsp->channels, dsp->frames);
+        bmo_err("user script failed:%s\n", lua_tostring(state->L, -1));
+        //not zeroing the buffers may cause earache on failure.
+        bmo_zero_mb(dsp->out_buffers, dsp->channels, dsp->frames);
 		return -1;
 	}
 	return status;

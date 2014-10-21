@@ -155,7 +155,7 @@ function dsp.open(path)
     local buffer_obj_p, channels, rate = dsp._fopen(path)
     local buf = dsp.temp_buf(channels, dsp.getdspframes(_dsp))
     buf.read = function(self, frames)
-        dsp._fread(buffer_obj_p, self.buffer, self.frames)
+        return dsp._fread(buffer_obj_p, self.buffer, self.frames)
     end
-    return function(t) buf:read(buf.frames);t{buf} end
+    return function(t) local ret = buf:read(buf.frames);t{buf};return ret end
 end
