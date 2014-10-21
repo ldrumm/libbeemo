@@ -44,10 +44,6 @@ typedef uint32_t vec4u __attribute__ ((vector_size (16)));
 #define BMO_VERSION_MINOR   0
 #define BMO_VERSION_PATCH   0
 
-#ifndef __STDC_IEC_559__
-#warning Many routines expect IEEE 754 representation for floats: you have been warned
-#endif 
-
 #define BMO_NO_DRIVER 0
 #define BMO_JACK_DRIVER 1
 #define BMO_PORTAUDIO_DRIVER 2

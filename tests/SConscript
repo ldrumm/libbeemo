@@ -167,7 +167,7 @@ if any(map(
         os.environ.keys()
 )):
     extra_commands=[
-        """valgrind --error-exitcode=1 --leak-check=full --num-callers=500 $"""
+        """valgrind --error-exitcode=1 --leak-check=full --num-callers=50 $"""
     ]
 
 #We don't want NDEBUG for the tests
