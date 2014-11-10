@@ -1,4 +1,10 @@
 #define _XOPEN_SOURCE 500
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+
 #include "../src/definitions.h"
 #include "../src/error.h"
 #include "../src/graph.h"
@@ -6,15 +12,8 @@
 #include "../src/lua/lua.h"
 #include "../src/memory/map.h"
 
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
+#include "lib/test_common.c"
 
-#define CHANNELS 100
-#define FRAMES 2048
-#define RATE 48000
 #define FREQ 200
 #define N_DSPS 100
 #define BUF_LEN 1024
@@ -109,14 +108,18 @@ serialize_deps(BMO_dsp_obj_t * node){
     //first, we count how many characters we're going to need in the malloced buffer.
     //each dependency takes 20 + 2 bytes in the worst case itoa(2^64-1), but is
     //likely to be 2-4 bytes in most cases in graphs with < 100 nodes.
-
+    #ifdef _WIN32
+    char * fmt_string = "%I64u, ";
+    #else
+    char * fmt_string = "%llu, ";
+    #endif
     assert(node);
     assert(sizeof(node->id) <= 8);
     char buf[22] = {0}; //(2^64-1) as a char string is 20 bytes
     size_t n_chars = 0;
     BMO_ll_t * dep = node->in_ports;
     while(dep){
-        snprintf(buf, sizeof(buf)-1, "%llu, ",  (unsigned long long)((BMO_dsp_obj_t *)dep->data)->id);
+        snprintf(buf, sizeof(buf)-1, fmt_string,  (unsigned long long)((BMO_dsp_obj_t *)dep->data)->id);
         n_chars += strlen(buf);
         dep = dep->next;
     }
@@ -127,7 +130,7 @@ serialize_deps(BMO_dsp_obj_t * node){
     // Do the actual filling of the buffer now we know how long the result string will be
     dep = node->in_ports;
     while(dep){
-        snprintf(buf, sizeof(buf)-1, "%llu, ", (unsigned long long)((BMO_dsp_obj_t *)dep->data)->id);
+        snprintf(buf, sizeof(buf)-1, fmt_string, (unsigned long long)((BMO_dsp_obj_t *)dep->data)->id);
         strncat(retbuf, buf, strlen(buf));
         dep = dep->next;
     }
@@ -268,7 +271,7 @@ dsp_top_a       dsp_top_b
     snprintf(
         luac_command + strlen(luac_command),
         BUF_LEN - strlen(luac_command) - 1,
-        "'%s'",
+        "\"%s\"",
         output_file
     );
     printf("%s\n", luac_command);

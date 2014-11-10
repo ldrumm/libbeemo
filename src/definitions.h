@@ -17,8 +17,8 @@
 #endif
 
 #ifdef BMO_HAVE_LUA
-#include <lua5.2/lua.h>
-#include <lua5.2/lauxlib.h>
+#include <lua.h>
+#include <lauxlib.h>
 #endif
 
 #ifdef BMO_HAVE_PTHREAD

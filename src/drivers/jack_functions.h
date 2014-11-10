@@ -1,6 +1,9 @@
+
 #ifndef BMO_JACK_FUNCTIONS_H
 #define BMO_JACK_FUNCTIONS_H
+#ifdef BMO_HAVE_JACK
 #include <jack/jack.h>
+#endif
 #include "../definitions.h"
 
 BMO_state_t * 

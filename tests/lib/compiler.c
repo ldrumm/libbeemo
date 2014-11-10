@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#include "test_common.c"
 
 #define BMO_TEST_COMPILER_BUF 65536
 

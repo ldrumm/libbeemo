@@ -38,7 +38,7 @@ bmo_driver_init(BMO_state_t * state, uint32_t channels, uint32_t rate, uint32_t 
                 rate, channels, buf_len);
             return bmo_pa_start(state, channels, rate, buf_len, flags);
             #else
-            bmo_error("client built without Portaudio support.\n");
+            bmo_err("client built without Portaudio support.\n");
             return NULL;
             #endif
         }
@@ -51,7 +51,7 @@ bmo_driver_init(BMO_state_t * state, uint32_t channels, uint32_t rate, uint32_t 
                 data = (void *)"BMO_client";
             return bmo_jack_start(state, channels, rate, buf_len, flags, (const char *)data);
             #else
-            bmo_error("client built without Jack support.\n");
+            bmo_err("client built without Jack support.\n");
             return NULL;
             #endif
         }
@@ -89,8 +89,8 @@ int bmo_driver_close(BMO_state_t * state)
                 return -1;
             }
             break;
-        #endif
         }
+        #endif
         default:{
             assert(0);
             bmo_err("cannot stop unkown driver:%d\n", state->driver_id);

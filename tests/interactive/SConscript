@@ -1,10 +1,10 @@
 Import('env')
+env = env.Clone()
+env.Append(LIBS=['beemo'])
+env.Append(LIBPATH='../../')
 
 for source in Glob('*.c'):
     test = env.Program(
         str(source).rstrip('.c'),
         [source],
-        LIBPATH='../../',
-        LIBS=['beemo', 'm', 'pthread', 'lua5.2', 'portaudio'],
-        CCFLAGS=env['CCFLAGS']+['-g3']
     )

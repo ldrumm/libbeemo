@@ -7,11 +7,14 @@
 #include <time.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #endif
 #endif
@@ -24,8 +27,6 @@
 #define HAVE_DLOPEN
 #endif
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <dlfcn.h>
 #include <fcntl.h>
 #endif

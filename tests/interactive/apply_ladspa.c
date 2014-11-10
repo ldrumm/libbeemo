@@ -1,6 +1,5 @@
 #include <stdlib.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
+
 #include "../../src/definitions.h"
 #include "../../src/error.h"
 #include "../../src/drivers/ringbuffer.h"
@@ -11,8 +10,21 @@
 #include "../../src/dsp_obj.h"
 #include "../../src/drivers/driver_utils.h"
 
-#define FRAMES 512
+#include "../lib/test_common.c"
+
 #define DITHER 0
+
+uint32_t htobe(uint32_t n)
+{
+    #if BMO_ENDIAN_LITTLE
+    return (((((uint32_t)(n) & 0xFF)) << 24)|
+        ((((uint32_t)(n) & 0xFF00)) << 8)   |
+        ((((uint32_t)(n) & 0xFF0000)) >> 8) |
+        ((((uint32_t)(n) & 0xFF000000)) >> 24));
+    #else
+    return n;
+    #endif
+}
 
 void usage(const char * progname)
 {
@@ -22,15 +34,14 @@ void usage(const char * progname)
 
 int fp32_au_header(uint32_t channels, uint32_t rate, FILE * file)
 {
-
     uint32_t header[7] = {
         0x2e736e64,
         0x0000001c,
         0xffffffff,
         0x00000007,
-        htonl(rate),
-        htonl(channels),
-        htonl(0)
+        htobe(rate),
+        htobe(channels),
+        htobe(0)
     };
     size_t n = fwrite(header, sizeof(uint32_t), 7, file);
     assert(n == 28);
@@ -39,8 +50,7 @@ int fp32_au_header(uint32_t channels, uint32_t rate, FILE * file)
 
 int main(int argc, char ** argv)
 {
-    bmo_verbosity(BMO_MESSAGE_INFO);
-
+    bmo_test_setup();
     if(argc < 4){
         usage(argv[0]);
     }
