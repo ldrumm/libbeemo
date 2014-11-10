@@ -171,7 +171,7 @@ if any(map(
 # replace the original construction environment
 
 env = env.Clone()
-env.Append(LIBS=['beemo'])
+env.Append(LIBS=['beemo', 'm'])
 env.Append(LIBPATH='../')
 try:
     env['CPPDEFINES'].remove('NDEBUG')
