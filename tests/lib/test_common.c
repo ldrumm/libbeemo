@@ -57,6 +57,10 @@ static uint32_t RATE = 44100;
 
 void assert_fequal(float a, float b)
 {
+    #ifdef NDEBUG
+    (void)a;
+    (void)b;
+    #endif
     assert(fabs(a) - fabs(b) < 1e-15);
 }
 
