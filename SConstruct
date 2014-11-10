@@ -2,18 +2,63 @@ import sys
 import os
 import multiprocessing
 
+from SCons.Errors import BuildError
+from SCons.SConf import SConfWarning
 
-def release(env):
-    env.Append(CCFLAGS=['-O2', '-mtune=native', '-ffast-math'])
-    env.Append(CPPDEFINES=['NDEBUG'])
 
-def profile(env):
-    env.Append(CCFLAGS=['-O2', '-ffast-math', '-g'])
+def _print(*args):
+    if GetOption('silent'):
+        return
+    print ' '.join((str(arg) for arg in args))
+
+class ArgOpts(object):
+    def __init__(self, env, args):
+        self.args = args
+        self.env = env
+
+    def enable_release(self, env):
+        self.env.Append(CCFLAGS=['-O2', '-mtune=native', '-ffast-math'])
+        self.env.Append(CPPDEFINES=['NDEBUG'])
+
+    def enable_profile(env):
+        self.env.Append(CCFLAGS=['-O2', '-ffast-math', '-g'])
+
+    def enable_analyse(env):
+        """
+        This fetches environment variables set by clang's scan-build
+        to allow clang to run the static analyser
+        """
+        self.env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
+
+    def configure(self):
+        for arg in self.args:
+            try:
+                option = getattr(self, 'enable_' + arg)
+                if self.args[arg] in ('1', 'true', 'yes'):
+                    option()
+            except AttributeError:
+                _print("ignoring unknown configure option:'%s" % arg)
+
 
 def std_switches(env):
-    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror'])
+    env.Append(CCFLAGS=['-Wall', '-Wextra', '-Werror', '-g3',])
+    env["CC"] = os.getenv("CC") or env["CC"]
 
-def check_dependencies(env, conf):
+
+def mingw(env):
+    env.Append(tools=['mingw'])
+    
+    # MinGW doesn't allow including unistd.h in c99 mode:
+    # http://sourceforge.net/p/mingw/bugs/2046/
+    try:
+        env['CCFLAGS'].remove('-std=c99',)
+    except ValueError:
+        pass
+    env.Append(CCFLAGS = ['-std=gnu99'])
+
+
+def check_dependencies(env, conf=None):
+    conf = conf or Configure(env)
     config = {}
     config['endian'] = sys.byteorder
     config['have_jack'] = conf.CheckLibWithHeader(
@@ -22,15 +67,17 @@ def check_dependencies(env, conf):
     config['have_pthread'] = conf.CheckLibWithHeader(
         'pthread', 'pthread.h', 'C'
     )
-    config['have_lua'] = conf.CheckLibWithHeader(
-        'lua5.2', ['lua5.2/lua.h','lua5.2/lauxlib.h'], 'C'
+    try:
+         env.ParseConfig("pkg-config lua5.2 --cflags --libs")
+         config['have_lua'] = conf.CheckLibWithHeader(
+        'lua5.2', ['lua.h','lauxlib.h'], 'C'
     )
-
-    #Fallback for systems with non-versioned libs
-    if not config['have_lua']:
+    except OSError:
+        _print("***System doesn't have a working pkg-config for Lua5.2 available - fallback config")
         config['have_lua'] = conf.CheckLibWithHeader(
-            'lua', ['lua5.2/lua.h','lua5.2/lauxlib.h'], 'C'
+            'lua', ['lua.h','lauxlib.h'], 'C'
         )
+
     config['have_sndfile'] = conf.CheckLibWithHeader(
         'sndfile', 'sndfile.h', 'C'
     )
@@ -39,10 +86,11 @@ def check_dependencies(env, conf):
     )
     config['have_ladspa'] = conf.CheckHeader('ladspa.h')
     if not config['have_lua']:
-        raise BuildError('Essential dependencies not found; cannot build without Lua')
+        raise BuildError(errstr='Essential dependencies not found; cannot build without Lua')
     return config
 
-def get_preprocessor_switches(env, config):
+
+def configure_cpp_switches(env, config):
     """
     receives a list of configure options, then mangles the key and value to
     create C preprocessor defines.
@@ -57,80 +105,46 @@ def get_preprocessor_switches(env, config):
             defines.extend(["BMO_" + key.upper()+ "_" + str(config[key]).upper()])
         elif((type(config[key]) == bool) and config[key] == True):
             defines.extend(["BMO_"+ key.upper() ])
-    return defines
+    env.Append(CPPDEFINES=defines)
 
-SetOption('num_jobs', multiprocessing.cpu_count())
+
+
+############ Environment / Config ############
 env = Environment(ENV=os.environ)
-env["CC"] = os.getenv("CC") or env["CC"]
 std_switches(env)
-
-############check build system/compiler and get user options############
 if os.name == 'nt':
-    #MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
-    env = Environment(ENV=os.environ, tools=['mingw'])
+    # MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
+    mingw(env)
 
-    #mingw doesn't allow including unistd.h in c99 mode:
-    #http://sourceforge.net/p/mingw/bugs/2046/
-    try:
-        i = env['CCFLAGS'].index('-std=c99')
-        env['CCFLAGS'][i] = '-std=gnu99'
-    except ValueError:
-        env.Append(CCFLAGS=['-std=gnu99'])
 
-if ARGUMENTS.get('analyse', False):
-    """This fetches environment variables set by clang's scan-build
-    to allow clang to run the static analyser
-    """
-    env["CC"] = os.getenv("CC") or env["CC"]
-    env["CXX"] = os.getenv("CXX") or env["CXX"]
-    env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
+############ Sources #############
+env.Append(source=[
+    Glob('src/*.c'), 
+    Glob('src/drivers/*.c'),
+    Glob('src/dsp/*.c'),
+    Glob('src/lua/*.c'),
+    Glob('src/memory/*.c'),
+])
 
-if env.GetOption('clean'):
-    deps = {}
-else:
+
+############ Targets #############
+beemo = env.SharedLibrary('beemo', env['source'])
+
+if not env.GetOption('clean'):
+    # Only parse these options during a real build because cleans take too long otherwise
+    opts = ArgOpts(env, COMMAND_LINE_TARGETS)
+    opts.configure()
     conf = Configure(env)
     deps = check_dependencies(env, conf)
+    configure_cpp_switches(env, deps)
     env = conf.Finish()
 
-######  get compiler switches  ##########
-env.Append(CPPDEFINES=get_preprocessor_switches(env, deps))
-std_switches(env)
-if ARGUMENTS.get('release', '').lower() in ('1', 'true', 'yes') :
-    print("Building in release mode with optimisations")
-    release(env)
-
-elif ARGUMENTS.get('profile', None):
-    profile(env)
-else:
-    env.Append(CCFLAGS=['-g3',])
-
-
-############sources#############
-env.Append(source = Glob('src/*.c'))
-env.Append(source = Glob('src/drivers/*.c'))
-env.Append(source = Glob('src/dsp/*.c'))
-env.Append(source = Glob('src/lua/*.c'))
-env.Append(source = Glob('src/memory/*.c'))
-
-#####We need to autogenerate some files for the lua interface
-if deps.get('have_lua', False):
-    env.SConscript('src/lua/SConscript', 'env')
-
-# Build the optional tests #
-
-########### TODO add installer###############
-if 'pkg' in COMMAND_LINE_TARGETS:
-    env.SConscript("pkg/SConscript", 'env')
-
-if os.name == 'nt':
-    #we seem to need to specify the what to link the dll against on windows.
-    libs = [x.lstrip('have_') for x in deps.keys() if deps[x] == True and x.startswith('have_')]
-    beemo = env.SharedLibrary('beemo', env['source'], LIBS=libs)
-else:
-    beemo = env.SharedLibrary('beemo', env['source'])
-
+# We need to autogenerate some files for the lua interface
+lualibs = env.SConscript('src/lua/SConscript', ['env', '_print'])
+# Maybe run some tests
 tests = env.SConscript('tests/SConscript', 'env')
+# Possibly build a native installer
+pkg = env.SConscript("pkg/SConscript", ['env', '_print'])
+
 env.Depends(tests, beemo)
-
 Default(beemo)
-
