@@ -1,14 +1,14 @@
-#include "../src/definitions.h"
-#include "../src/error.h"
-#include "../src/graph.h"
-#include "../src/dsp_obj.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
-#define CHANNELS 1
-#define FRAMES 2048
-#define RATE 48000
+#include "../src/definitions.h"
+#include "../src/error.h"
+#include "../src/graph.h"
+#include "../src/dsp_obj.h"
+
+#include "lib/test_common.c"
+
 #define FREQ 200
 
 int main(void)

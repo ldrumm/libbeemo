@@ -1,21 +1,19 @@
 #define _XOPEN_SOURCE 500
 #include <stdlib.h>
 #include <math.h>
+
 #include "../src/definitions.h"
 #include "../src/error.h"
 #include "../src/ladspa.h"
 #include "../src/dsp_obj.h"
 #include "../src/memory/map.h"
 
+#include "lib/test_common.c"
 #include "lib/compiler.c"
-
-#define FRAMES 512
-#define CHANNELS 1
-#define RATE 44100
 
 int main(void)
 {
-    bmo_verbosity(BMO_MESSAGE_DEBUG);
+    bmo_test_setup();
     const char * const plugin_source = "./lib/invert_plugin.c";
     int err = 0;
     size_t len = bmo_fsize(plugin_source, &err);
@@ -49,7 +47,7 @@ int main(void)
     //The plugin is supposed to invert, and not alter the output signal in any other way
     for(uint32_t ch = 0; ch < CHANNELS; ch++){
         for(size_t i = 0; i < FRAMES; i++){
-            assert(plugin->out_buffers[ch][i] == -sinf((float)i));
+            assert_fequal(plugin->out_buffers[ch][i], -sinf((float)i));
         }
     }
     plugin->_close(plugin, 0);

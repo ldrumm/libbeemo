@@ -378,7 +378,7 @@ bmo_conv_iftoif(void * out, void * in, uint32_t fmt_out, uint32_t fmt_in, uint32
 	float f;
 	float *fp;
 	double d;
-	double * dp;
+	double *dp;
 	switch(bmo_fmt_stride(fmt_in))
 	{
 		case 4:
@@ -544,7 +544,6 @@ bmo_conv_ipcmtoif(float * out, void * in_stream, uint32_t fmt_out, uint32_t fmt_
 	int swap_in = _bmo_to_native_must_swap(fmt_in);
 	int swap_out = _bmo_to_native_must_swap(fmt_out);
 
-	
 	char * in = (char *) in_stream;
 	int64_t pcm;
 	float f;
@@ -577,7 +576,6 @@ bmo_conv_ibpcmtomb(float ** output_data, void * interleaved_data, uint32_t chann
 	int64_t range = (int64_t) _bmo_fmt_pcm_range(fmt_in);
 	float multiplier = (float) 1.0 / (range / 2.0);
 
-		
 	for(uint32_t f = 0; f < frames; f++)
 	{
 		for(uint32_t ch = 0; ch < channels; ch++)
@@ -671,7 +669,7 @@ bmo_conv_mftoix(void * out, float ** in, uint32_t channels, uint32_t fmt_out, ui
 				}
 			}
 			else 
-			{	;} //FIXME haven't sorted 64bit float outputs yet
+			{	BMO_NOT_IMPLEMENTED;} //FIXME haven't sorted 64bit float outputs yet
 			break;
 		}
 		default:assert(0);

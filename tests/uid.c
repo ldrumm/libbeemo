@@ -11,14 +11,12 @@
 #include "../src/error.h"
 #include "lib/stopwatch.c"
 #include <pthread.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #define WIN32_LEAN_AND_MEAN
 #endif
 #define MAX_THREADS 1024
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
+
 
 #ifndef MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -38,7 +36,7 @@ int nproc(void)
         return nread;
     }
     return atoi(buf);
-    #elif WIN32
+    #elif _WIN32
     SYSTEM_INFO info;
     GetSystemInfo(&info);
     return (int)info.dwNumberOfProcessors;
@@ -76,7 +74,7 @@ int main(void)
     thread will never cause a race.
     */
     int nthreads = nproc();
-    if(getenv("TRAVIS")|| getenv("JENKINS_HOME")){
+    if(getenv("TRAVIS") || getenv("JENKINS_HOME")){
         nthreads = MIN(4, nthreads); //CI builds time out because there are more physical processor in the host than the guest
     }
     uint64_t iter = 1000000;

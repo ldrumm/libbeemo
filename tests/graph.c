@@ -1,14 +1,13 @@
-#include "../src/definitions.h"
-#include "../src/error.h"
-#include "../src/graph.h"
-#include "../src/dsp_obj.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
-#define CHANNELS 1
-#define FRAMES 2048
-#define RATE 48000
+#include "../src/definitions.h"
+#include "../src/error.h"
+#include "../src/graph.h"
+#include "../src/dsp_obj.h"
+
+#include "lib/test_common.c"
 #define FREQ 200
 
 int main(void)
@@ -27,7 +26,7 @@ dsp_top_a       dsp_top_b
         dsp_bottom <-after updating the graph's dependencies, we should see the mixed values from dsp_top_a and dsp_top_b
 
     */
-    bmo_verbosity(BMO_MESSAGE_DEBUG);
+    bmo_test_setup();
     float * test_buf_a = malloc(FRAMES * sizeof(float));
     assert(test_buf_a);
     float * test_buf_b = malloc(FRAMES * sizeof(float));
@@ -55,7 +54,7 @@ dsp_top_a       dsp_top_b
     bmo_update_dsp_tree(dsp_bottom, 1, 0);
 
     for(size_t i=0; i < FRAMES;i++)
-        assert(dsp_bottom->out_buffers[0][i] == test_buf_a[i] + test_buf_b[i]);
+        assert_fequal(dsp_bottom->out_buffers[0][i], test_buf_a[i] + test_buf_b[i]);
 
     free(test_buf_a);
     free(test_buf_b);
