@@ -2,6 +2,7 @@
 #define BMO_TEST_COMMON_C
 #include <math.h>
 #include "../../src/error.h"
+#include "../../src/definitions.h"
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
@@ -54,14 +55,14 @@ void winsetup(void)
 static uint32_t CHANNELS = 1;
 static uint32_t FRAMES = 512;
 static uint32_t RATE = 44100;
+static uint32_t DRIVER = 0;
 
 void assert_fequal(float a, float b)
 {
-    #ifdef NDEBUG
-    (void)a;
-    (void)b;
-    #endif
+
     assert(fabs(a) - fabs(b) < 1e-15);
+    (void) a;
+    (void) b;
 }
 
 void assert_multibuf_equal(float **a, float **b, uint32_t channels, uint32_t frames)
@@ -69,6 +70,16 @@ void assert_multibuf_equal(float **a, float **b, uint32_t channels, uint32_t fra
     for(uint32_t ch=0; ch < channels; ch++)
         for(uint32_t f=0; f < frames; f++)
             assert_fequal(a[ch][f], b[ch][f]);
+}
+
+static void _setup_driver(void)
+{
+    #ifdef BMO_HAVE_JACK
+    DRIVER = getenv("JACK") ? BMO_JACK_DRIVER : 0;
+    #endif
+    #ifdef BMO_HAVE_PORTAUDIO
+    DRIVER = getenv("PORTAUDIO") ? BMO_PORTAUDIO_DRIVER : DRIVER;
+    #endif
 }
 
 void bmo_test_setup(void)
@@ -93,6 +104,7 @@ void bmo_test_setup(void)
 		FRAMES = atoi(env);
 		assert(FRAMES > 0);
 	}
+	_setup_driver();
 }
 
 #endif

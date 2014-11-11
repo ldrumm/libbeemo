@@ -116,6 +116,7 @@ def configure_cpp_switches(env, config):
 )
 
 ############ Environment / Config ############
+SetOption('num_jobs', multiprocessing.cpu_count())
 env = Environment(ENV=os.environ)
 std_switches(env)
 if os.name == 'nt':
