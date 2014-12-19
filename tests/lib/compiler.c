@@ -9,6 +9,44 @@
 
 #define BMO_TEST_COMPILER_BUF 65536
 
+
+char *shell_escape(const char * source)
+{
+    // This escape function will definitely prevent accidents, but it's not
+    //guaranteed against malintent.
+    const char *s = source;
+    size_t len = strlen(source);
+    size_t quotes = 0;
+    //work out how many single quotes we need to escape so we know what to alloc
+    while((s = strchr(++s, '\'')) ){
+        quotes++;
+    }
+    char *escaped = calloc(sizeof(char), 2 + (quotes * 3) + len + 1);
+    char *alias = escaped;
+    if(!escaped)
+        return NULL;
+
+    s = source;
+    *alias++ = '\'';//beginning quotes
+
+    const char *next = s;
+    size_t tok_len;
+    do{
+        next = strchr(s, '\'');
+        tok_len = (next) ? (size_t)(next - s): strlen(s);
+        strncpy(alias, s, tok_len);
+        alias += tok_len;
+        if(!next){
+            break;
+        }
+        strcpy(alias, "'\\''");
+        alias+=4;
+    }while((s = ++next));
+    *alias = '\'';
+
+    return escaped;
+}
+
 int
 write_source_file(char *path, const char *text)
 {
@@ -25,12 +63,14 @@ write_source_file(char *path, const char *text)
 }
 
 int
-run_compiler(const char *target, const char *source, const char *args)
+run_compiler(const char *target_path, const char *source_path, const char *args)
 {
     int ok;
-    assert(source);
-    assert(target);
+    assert(source_path);
+    assert(target_path);
     char compiler_command[BMO_TEST_COMPILER_BUF];
+    char *source = shell_escape(source_path);
+    char *target = shell_escape(target_path);
     snprintf(compiler_command,
         BMO_TEST_COMPILER_BUF,
         "gcc -x c %s %s -o %s",
@@ -46,10 +86,13 @@ run_compiler(const char *target, const char *source, const char *args)
         );
     }
     remove(source);
+    free(source);
+    free(target);
     return ok;
 }
 
-char * compile_string(const char *code, const char *args, const char *suffix){
+char * compile_string(const char *code, const char *args, const char *suffix)
+{
     char source_path[BMO_TEST_COMPILER_BUF];
     char target_path[BMO_TEST_COMPILER_BUF];
     char cwd[BMO_TEST_COMPILER_BUF];
@@ -67,5 +110,6 @@ char * compile_string(const char *code, const char *args, const char *suffix){
         remove(source_path);
         return NULL;
     }
+    remove(source_path);
     return strdup(target_path);
 }
