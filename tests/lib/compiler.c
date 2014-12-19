@@ -13,36 +13,45 @@
 char *shell_escape(const char * source)
 {
     // This escape function will definitely prevent accidents, but it's not
-    //guaranteed against malintent.
+    //guaranteed against malintent. No sir.
+    #if !defined(_WIN32)
+    #define ENCAPS_QUOTE  '\''
+    #define ESCAPED_QUOTE "'\\''"
+    #define ESCAPED_LEN 4
+    #else
+    #define ENCAPS_QUOTE  '"'
+    #define ESCAPED_QUOTE "\"\\\"\""
+    #define ESCAPED_LEN 4
+    #endif
     const char *s = source;
     size_t len = strlen(source);
     size_t quotes = 0;
     //work out how many single quotes we need to escape so we know what to alloc
-    while((s = strchr(++s, '\'')) ){
+    while((s = strchr(++s, ENCAPS_QUOTE)) ){
         quotes++;
     }
-    char *escaped = calloc(sizeof(char), 2 + (quotes * 3) + len + 1);
+    char *escaped = calloc(sizeof(char), 2 + (quotes * ESCAPED_LEN) + len + 1);
     char *alias = escaped;
     if(!escaped)
         return NULL;
 
     s = source;
-    *alias++ = '\'';//beginning quotes
+    *alias++ = ENCAPS_QUOTE;//beginning quotes
 
     const char *next = s;
     size_t tok_len;
     do{
-        next = strchr(s, '\'');
+        next = strchr(s, ENCAPS_QUOTE);
         tok_len = (next) ? (size_t)(next - s): strlen(s);
         strncpy(alias, s, tok_len);
         alias += tok_len;
         if(!next){
             break;
         }
-        strcpy(alias, "'\\''");
-        alias+=4;
+        strcpy(alias, ESCAPED_QUOTE);
+        alias+=ESCAPED_LEN;
     }while((s = ++next));
-    *alias = '\'';
+    *alias = ENCAPS_QUOTE;
 
     return escaped;
 }
