@@ -1,6 +1,8 @@
 #ifndef BMO_TEST_COMMON_C
 #define BMO_TEST_COMMON_C
 #include <math.h>
+#include <strings.h>
+
 #include "../../src/error.h"
 #include "../../src/definitions.h"
 #ifdef NDEBUG
@@ -46,7 +48,7 @@ int report_hook(int type, char *message, int *ret_val)
 
 void winsetup(void)
 {
-    // The above is moot.  MinGW does not have the correct definition
+    // TODO The above is moot.  MinGW does not have the correct definition
     //	_CrtSetReportHook(report_hook);
 }
 
@@ -72,6 +74,27 @@ void assert_multibuf_equal(float **a, float **b, uint32_t channels, uint32_t fra
             assert_fequal(a[ch][f], b[ch][f]);
 }
 
+
+static void _setup_logging(void)
+{
+    bmo_verbosity(BMO_MESSAGE_DEBUG);
+    const char * env = getenv("LOGGING");
+    if(env){
+        if(strcasecmp(env, "INFO")==0){
+            bmo_verbosity(BMO_MESSAGE_INFO);
+        }
+        if(strcasecmp(env, "DEBUG")==0){
+            bmo_verbosity(BMO_MESSAGE_DEBUG);
+        }
+        if(strcasecmp(env, "ERROR")==0){
+            bmo_verbosity(BMO_MESSAGE_CRIT);
+        }
+        if(strcasecmp(env, "NONE")==0){
+            bmo_verbosity(BMO_MESSAGE_NONE);
+        }
+    }
+}
+
 static void _setup_driver(void)
 {
     #ifdef BMO_HAVE_JACK
@@ -87,7 +110,7 @@ void bmo_test_setup(void)
 	#ifdef _WIN32
 	winsetup();
 	#endif
-	bmo_verbosity(BMO_MESSAGE_DEBUG);
+
 	const char * env;
 	env = getenv("CHANNELS");
 	if(env){
@@ -105,6 +128,7 @@ void bmo_test_setup(void)
 		assert(FRAMES > 0);
 	}
 	_setup_driver();
+	_setup_logging();
 }
 
 #endif
