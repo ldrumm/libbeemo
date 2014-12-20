@@ -97,6 +97,12 @@ void bmo_test_setup(void)
 	#endif
 	bmo_verbosity(BMO_MESSAGE_DEBUG);
 	const char * env;
+	env = getenv("VERBOSITY");
+	if(env){
+	    int v = atoi(env);
+	    assert(v > 0 && v < BMO_MESSAGE_DEBUG);
+		bmo_verbosity(v);
+	}
 	env = getenv("CHANNELS");
 	if(env){
 		CHANNELS = atoi(env);
