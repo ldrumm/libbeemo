@@ -102,6 +102,11 @@ run_compiler(const char *target_path, const char *source_path, const char *args)
 
 char * compile_string(const char *code, const char *args, const char *suffix)
 {
+	#if defined(_WIN32)
+	#define PATH_SEP "\\"
+	#else
+	#define PATH_SEP "/"
+	#endif
     char source_path[BMO_TEST_COMPILER_BUF];
     char target_path[BMO_TEST_COMPILER_BUF];
     char cwd[BMO_TEST_COMPILER_BUF];
@@ -114,7 +119,7 @@ char * compile_string(const char *code, const char *args, const char *suffix)
         remove(source_path);
         return NULL;
     }
-    snprintf(target_path, BMO_TEST_COMPILER_BUF, "%s/%s.%s", cwd, source_path, suffix);
+    snprintf(target_path, BMO_TEST_COMPILER_BUF, "%s%s%s.%s", cwd, PATH_SEP, source_path, suffix);
     if(run_compiler(target_path, source_path, args) != 0){
         remove(source_path);
         return NULL;
