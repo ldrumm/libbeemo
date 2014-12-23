@@ -50,6 +50,10 @@ bmo_fopen(const char * path, uint32_t flags)
 	    bmo_err("sndfile_open failed for '%s'\n", path);
 	return obj;
 #else
+        //buffer all data into memory if no flag given.
+	if(!(flags & (BMO_BUFFERED_DATA | BMO_MAPPED_FILE_DATA))){
+	    flags |= BMO_BUFFERED_DATA;
+	}
 	size_t len = strlen(path);
 	if(strncmp(path + len - 4, ".wav", 4) == 0)
 		return bmo_fopen_wav(path, flags);
