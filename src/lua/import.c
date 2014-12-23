@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
-#include <lua5.2/lua.h>
-#include <lua5.2/lauxlib.h>
+#include <lua.h>
+#include <lauxlib.h>
 #include "../definitions.h"
 #include "../import_export.h"
 #include "../buffer.h"

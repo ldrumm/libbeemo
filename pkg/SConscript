@@ -1,8 +1,12 @@
 import platform
-Import('env')
 
+from SCons.Errors import BuildError
+
+Import('env')
+if not 'pkg' in COMMAND_LINE_TARGETS:
+    Return()
 def unsupported(system):
-    raise BuildError("%s does not have a package builder yet..." % system)
+    raise BuildError(errstr="Cannot build %s installer; platform package builder not yet implemented." % system)
 
 supported = {
     'deb':lambda :env.SConscript('deb/SConscript', 'env'), 

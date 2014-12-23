@@ -5,6 +5,8 @@
 #include <errno.h>
 #include "../error.h"
 #include "../definitions.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 size_t bmo_fsize(const char * path, int * err)
 {
@@ -12,19 +14,19 @@ size_t bmo_fsize(const char * path, int * err)
         *err = 1;
         return 0;
    	}
-#ifdef __linux__
+// #ifdef __linux__
     struct stat buf;
     if (stat(path, &buf) == -1) {
         *err = 1;
 		return 0;
 	}
-#elif _WIN32
-    struct __stat64 buf;
-    if (_stat64(path, &buf) == -1){
-        *err = 1;
-        return 0;
-    }
-#endif
+// #elif _WIN32
+    // struct __stat64 buf;
+    // if (_stat64(path, &buf) == -1){
+        // *err = 1;
+        // return 0;
+    // }
+// #endif
 	*err = 0;
 	return buf.st_size;
 }
@@ -63,7 +65,7 @@ void * bmo_map(const char * path, uint32_t flags, size_t offset)
 	    return NULL;
 	}
 	return map;
- #elif _WIN32	
+#else
  	size_t size;
  	int err;
 	HANDLE fd;
@@ -106,8 +108,6 @@ void * bmo_map(const char * path, uint32_t flags, size_t offset)
 	data = MapViewOfFile(mmaph, FILE_MAP_READ, 0, offset, size);
 	bmo_info("%s mapped at %p\n", path, data);
 	return data;
- #else
- #error couldn not detect mmap(2) or MapViewOfFile(win32)
  #endif
 }
 

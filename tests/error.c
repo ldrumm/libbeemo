@@ -3,29 +3,26 @@
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
+
 #include "../src/error.h"
+
+#include "lib/test_common.c"
+
 #define MAX_CHAR 126
 #define MIN_CHAR 32
 
-
-int main(int argc, char ** argv)
+int main(void)
 {
+	bmo_test_setup();
     char * long_message = ""
-"This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is"
-"long.This message is long.This message is long.This message is";
-
-	if(argc < 2){
-		bmo_verbosity(BMO_MESSAGE_DEBUG);
-	}
-	else{
-		bmo_verbosity((uint32_t)atoi(argv[1]));	
-	}
+	"This message is long.This message is long.This message is"
+    "long.This message is long.This message is long.This message is"
+	"long.This message is long.This message is long.This message is"
+	"long.This message is long.This message is long.This message is"
+	"long.This message is long.This message is long.This message is"
+	"long.This message is long.This message is long.This message is"
+	"long.This message is long.This message is long.This message is"
+	"long.This message is long.This message is long.This message is";
 	
 	bmo_debug("string:%s\n","stringhere");
 	assert(strcmp(strchr(bmo_strerror(), ':')+1, "string:stringhere\n") == 0);
@@ -34,8 +31,6 @@ int main(int argc, char ** argv)
 	assert(strcmp(strchr(bmo_strerror(), ':')+1, "integer:-3\n") == 0);
 	bmo_err("float:%1.1f\n", 1.0);
 	assert(strcmp(strchr(bmo_strerror(), ':')+1, "float:1.0\n") == 0);
-	bmo_err("pointer:%p\n", 0x5);
-	assert(strcasecmp(strchr(bmo_strerror(), ':')+1, "pointer:0x5\n") == 0);
 	bmo_err("unsigned:%u\n", 9u);
 	assert(strcmp(strchr(bmo_strerror(), ':')+1, "unsigned:9\n") == 0);
 	bmo_verbosity(BMO_MESSAGE_CRIT);

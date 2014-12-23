@@ -1,9 +1,9 @@
 #ifdef BMO_HAVE_LUA
 /*builtin funcs passed to the lua interpreter as callbacks to C dsp routines*/
 /*could be implemented in Lua, but they are already exposed in C and the C versions are fast*/
-#include <lua5.2/lua.h>
-#include <lua5.2/lauxlib.h>
-#include <lua5.2/lualib.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 #include <strings.h>
 #include <string.h>
 #include <assert.h>

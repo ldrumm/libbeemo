@@ -11,19 +11,26 @@ def _print(*args):
         return
     print ' '.join((str(arg) for arg in args))
 
+
 class ArgOpts(object):
     def __init__(self, env, args):
         self.args = args
         self.env = env
 
-    def enable_release(self, env):
+    def enable_release(self):
         self.env.Append(CCFLAGS=['-O2', '-mtune=native', '-ffast-math'])
         self.env.Append(CPPDEFINES=['NDEBUG'])
+        for debug in ('-g', '-ggdb'):
+            for x in ('', '2', '3'):
+                try:
+                    self.env['CCFLAGS'].remove("%s%s" % (debug, x))
+                except ValueError:
+                    pass
 
-    def enable_profile(env):
+    def enable_profile(self):
         self.env.Append(CCFLAGS=['-O2', '-ffast-math', '-g'])
 
-    def enable_analyse(env):
+    def enable_analyse(self):
         """
         This fetches environment variables set by clang's scan-build
         to allow clang to run the static analyser
@@ -41,13 +48,13 @@ class ArgOpts(object):
 
 
 def std_switches(env):
-    env.Append(CCFLAGS=['-Wall', '-Wextra', '-Werror', '-g3',])
+    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror', '-g3',])
     env["CC"] = os.getenv("CC") or env["CC"]
 
 
 def mingw(env):
     env.Append(tools=['mingw'])
-    
+
     # MinGW doesn't allow including unistd.h in c99 mode:
     # http://sourceforge.net/p/mingw/bugs/2046/
     try:
@@ -105,11 +112,11 @@ def configure_cpp_switches(env, config):
             defines.extend(["BMO_" + key.upper()+ "_" + str(config[key]).upper()])
         elif((type(config[key]) == bool) and config[key] == True):
             defines.extend(["BMO_"+ key.upper() ])
-    env.Append(CPPDEFINES=defines)
-
-
+    env.Append(CPPDEFINES=defines
+)
 
 ############ Environment / Config ############
+SetOption('num_jobs', multiprocessing.cpu_count())
 env = Environment(ENV=os.environ)
 std_switches(env)
 if os.name == 'nt':
@@ -119,7 +126,7 @@ if os.name == 'nt':
 
 ############ Sources #############
 env.Append(source=[
-    Glob('src/*.c'), 
+    Glob('src/*.c'),
     Glob('src/drivers/*.c'),
     Glob('src/dsp/*.c'),
     Glob('src/lua/*.c'),
@@ -132,7 +139,7 @@ beemo = env.SharedLibrary('beemo', env['source'])
 
 if not env.GetOption('clean'):
     # Only parse these options during a real build because cleans take too long otherwise
-    opts = ArgOpts(env, COMMAND_LINE_TARGETS)
+    opts = ArgOpts(env, ARGUMENTS)
     opts.configure()
     conf = Configure(env)
     deps = check_dependencies(env, conf)
@@ -140,11 +147,11 @@ if not env.GetOption('clean'):
     env = conf.Finish()
 
 # We need to autogenerate some files for the lua interface
-lualibs = env.SConscript('src/lua/SConscript', ['env', '_print'])
+lualibs = env.SConscript('src/lua/SConscript', 'env')
 # Maybe run some tests
 tests = env.SConscript('tests/SConscript', 'env')
 # Possibly build a native installer
-pkg = env.SConscript("pkg/SConscript", ['env', '_print'])
+pkg = env.SConscript("pkg/SConscript", 'env')
 
 env.Depends(tests, beemo)
 Default(beemo)

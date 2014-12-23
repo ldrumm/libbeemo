@@ -6,6 +6,7 @@ import uuid
 from SCons.Errors import BuildError
 
 Import('env')
+env.SConscript('interactive/SConscript', 'env')
 
 """
 The test builders search the tests directory for all C sources, and build each
@@ -25,6 +26,7 @@ tests for the main library.  Hopefully this encourages more sanity-checks.
 # different context with a different PWD.
 # This is due to scons building out-of-order (deferred)
 __file__ = os.getcwd()
+
 
 def _print(*args):
     if GetOption('silent'):
@@ -147,11 +149,6 @@ def run_all_tests(env, sources_list, **kwargs):
 
     return programs
 
-if os.name == 'nt':
-    LIBS = ['beemo', 'm', 'pthread', 'lua', 'portaudio']
-else:
-    LIBS = ['beemo', 'm', 'pthread', 'lua5.2', 'portaudio']
-
 env.AddMethod(run_all_tests, "RunAllTests")
 
 extra_commands = list()
@@ -170,21 +167,20 @@ if any(map(
         """valgrind --error-exitcode=1 --leak-check=full --num-callers=50 $"""
     ]
 
-#We don't want NDEBUG for the tests
-#replace the original construction environment
+# We don't want NDEBUG for the tests
+# replace the original construction environment
+
 env = env.Clone()
+env.Append(LIBS=['beemo', 'm'])
+env.Append(LIBPATH='../')
 try:
     env['CPPDEFINES'].remove('NDEBUG')
-except ValueError:
+except (ValueError, KeyError):
     pass
 
 all_my_tests = env.RunAllTests(
     Glob('*.c'),
-    LIBPATH='../',
-    LIBS=LIBS,
     extra_commands=extra_commands
 )
-
-env.SConscript('interactive/SConscript', 'env')
 
 Return("all_my_tests")
