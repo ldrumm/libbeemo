@@ -14,7 +14,7 @@ int bmo_fmt_pcm(uint32_t flags);
 uint32_t bmo_fmt_end(uint32_t flags);
 uint32_t bmo_fmt_dither(uint32_t flags);
 uint32_t _bmo_fmt_conv_type(uint32_t fmt_out, uint32_t fmt_in);
-long double _bmo_fmt_pcm_range(uint32_t fmt);
+float _bmo_fmt_pcm_range(uint32_t fmt);
 void bmo_conv_iftoif(void * out, void * in, uint32_t fmt_out, uint32_t fmt_in, uint32_t samples);
 void bmo_conv_iftoipcm(void * out_stream, void * in_stream, uint32_t fmt_out,  uint32_t fmt_in, uint32_t count);
 void bmo_conv_ipcmtoipcm(void * out_stream, void * in_stream, uint32_t fmt_out, uint32_t fmt_in, uint32_t count);
