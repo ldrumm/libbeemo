@@ -45,7 +45,6 @@ int report_hook(int type, char *message, int *ret_val)
 }
 
 
-
 void winsetup(void)
 {
     // TODO The above is moot.  MinGW does not have the correct definition
@@ -53,12 +52,21 @@ void winsetup(void)
 }
 
 #endif
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 static uint32_t CHANNELS = 1;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 static uint32_t FRAMES = 512;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 static uint32_t RATE = 44100;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 static uint32_t DRIVER = 0;
-
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 void assert_fequal(float a, float b)
 {
 
@@ -112,6 +120,12 @@ void bmo_test_setup(void)
 	#endif
 
 	const char * env;
+	env = getenv("VERBOSITY");
+	if(env){
+	    int v = atoi(env);
+	    assert(v > 0 && v < BMO_MESSAGE_DEBUG);
+		bmo_verbosity(v);
+	}
 	env = getenv("CHANNELS");
 	if(env){
 		CHANNELS = atoi(env);
