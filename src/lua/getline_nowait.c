@@ -64,7 +64,7 @@ static size_t try_getline(char * buf, size_t count)
         return 0;
     }
     count = len;
-
+    return count;
     #elif _WIN32
     #define UTF8CP 65001 //UTF-8
     static wint_t line_buf[BMO_TEXT_BUF];
@@ -146,6 +146,8 @@ fail:
     (void)count;
     BMO_NOT_IMPLEMENTED;
     #endif
+
+    return 0;
 }
 
 static int getline_nowait(lua_State *L)
@@ -167,7 +169,6 @@ static int getline_nowait(lua_State *L)
     lua_pushstring(L, buf);
     lua_concat(L, 2);
     current_buff = bmo_strdup(lua_tostring(L, -1));
-    
     return 1;
 }
 
