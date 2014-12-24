@@ -53,12 +53,17 @@ def std_switches(env):
 
 
 def mingw(env):
-    env.Append(tools=['mingw'])
-
     # MinGW doesn't allow including unistd.h in c99 mode:
     # http://sourceforge.net/p/mingw/bugs/2046/
     try:
         env['CCFLAGS'].remove('-std=c99',)
+    except ValueError:
+        pass
+
+    # MinGW is missing a bunch of prototypes which cause build failures, 
+    # even though the MinGW CRT includes the definitions
+    try:
+        env['CCFLAGS'].remove('-Werror',)
     except ValueError:
         pass
     env.Append(CCFLAGS = ['-std=gnu99'])
@@ -121,6 +126,8 @@ env = Environment(ENV=os.environ)
 std_switches(env)
 if os.name == 'nt':
     # MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
+    env = Environment(ENV=os.environ, tools=['mingw'])
+    std_switches(env)
     mingw(env)
 
 
