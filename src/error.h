@@ -29,10 +29,11 @@
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 #else //win32
-#define ANSI_COLOR_RED     " "
-#define ANSI_COLOR_GREEN   " "
-#define ANSI_COLOR_YELLOW  " "
-#define ANSI_COLOR_RESET   " "
+#include <windows.h>
+#define ANSI_COLOR_RED     win_setcolor(FOREGROUND_RED)
+#define ANSI_COLOR_GREEN   win_setcolor(FOREGROUND_GREEN)
+#define ANSI_COLOR_YELLOW  win_setcolor(FOREGROUND_GREEN|FOREGROUND_RED)
+#define ANSI_COLOR_RESET   ""
 #endif
 
 #define bmo_debug(msg, ...) (_bmo_message((BMO_MESSAGE_DEBUG),  __func__ ,(msg), ##__VA_ARGS__))	//These variadic macros require GCC extensions (clang works)
