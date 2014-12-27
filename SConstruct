@@ -122,6 +122,7 @@ def configure_cpp_switches(env, config):
 
 ############ Environment / Config ############
 SetOption('num_jobs', multiprocessing.cpu_count())
+AddOption('--disable', type='string')
 env = Environment(ENV=os.environ)
 std_switches(env)
 if os.name == 'nt':
@@ -150,6 +151,15 @@ if not env.GetOption('clean'):
     opts.configure()
     conf = Configure(env)
     deps = check_dependencies(env, conf)
+    disable = env.GetOption('disable')
+    for disabled in (disable and disable.split(',') or list()):
+        try:
+            #skip if not a valid get
+            _print("disabling %s" % disabled)
+            if( deps['have_' + disabled]):
+                deps['have_' + disabled] = False
+        except AttributeError:
+            raise BuildError(errstr="invalid option: '%s'" % disabled)
     configure_cpp_switches(env, deps)
     env = conf.Finish()
 
