@@ -158,7 +158,7 @@ if not env.GetOption('clean'):
             _print("disabling %s" % disabled)
             if( deps['have_' + disabled]):
                 deps['have_' + disabled] = False
-        except AttributeError:
+        except KeyError:
             raise BuildError(errstr="invalid option: '%s'" % disabled)
     configure_cpp_switches(env, deps)
     env = conf.Finish()
