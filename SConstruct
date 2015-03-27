@@ -143,6 +143,7 @@ env.Append(source=[
 
 
 ############ Targets #############
+static = env.Library('beemo', env['source'])
 beemo = env.SharedLibrary('beemo', env['source'])
 
 if not env.GetOption('clean'):
@@ -172,3 +173,4 @@ pkg = env.SConscript("pkg/SConscript", 'env')
 
 env.Depends(tests, beemo)
 Default(beemo)
+Default(static)
