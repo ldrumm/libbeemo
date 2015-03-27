@@ -10,6 +10,7 @@
 #include "../../src/drivers/ringbuffer.h"
 #include "../../src/graph.h"
 #include "../../src/dsp_obj.h"
+#include "../../src/import_export.h"
 
 #include "../lib/test_common.c"
 

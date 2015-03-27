@@ -1,19 +1,21 @@
 #ifndef BMO_SUN_AU_H
 #define BMO_SUN_AU_H
 BMO_buffer_obj_t * bmo_fopen_sun(const char *path, uint32_t flags);
-size_t bmo_fwrite_sun(BMO_buffer_obj_t * buffer, const char * path, uint32_t flags);
+size_t bmo_fwrite_sun(BMO_buffer_obj_t * buffer, FILE *file, uint32_t flags);
+size_t bmo_buf_save_sun(BMO_buffer_obj_t *buffer, const char * path, uint32_t flags);
+int bmo_fwrite_header_sun(FILE * file, uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate);
 
-//BMO_AU_HEADER
 typedef struct
 {
-	uint32_t au_magic_number;				/// ASCII '.snd' or 0x2e736e64
-	uint32_t au_data_offset;				///	Audio data offset in bytes from the beginning of the file. This value is stored big endian. Most of the time this value = 24 bytes, but this is by no means guaranteed.
-	uint32_t au_data_size;					///	The size in bytes of the data following the header. Usually filesize-24 stored big endian in the file.
-	uint32_t au_data_encoding;				///	The encoding for the audio stream. Stored big-endian in the file. Common values are 3 - 16bit, linear PCM; 4 - 24bit, linear PCM; 6 - 32bit, IEEE floating point.
-	
-	uint32_t au_data_sample_rate;			///	sample rate. stored big endian in the file
-	uint32_t au_data_channels;				///	number of interleaved channels in the audio stream. stored big endian in the file.
-	uint32_t au_metadata;
+	uint32_t au_magic_number;	/// ASCII '.snd' or 0x2e736e64
+	uint32_t au_data_offset;	///	Audio data offset in bytes from the beginning of the file. This value is stored big endian. Most of the time this value = 24 bytes, but this is by no means guaranteed.
+	uint32_t au_data_size;		///	The size in bytes of the data following the header. Usually filesize-24 stored big endian in the file.
+	uint32_t au_data_encoding;	///	The encoding for the audio stream. Stored big-endian in the file. Common values are 3 - 16bit, linear PCM; 4 - 24bit, linear PCM; 6 - 32bit, IEEE floating point.
+
+	uint32_t au_data_sample_rate;/// sample rate. stored big endian in the file
+	uint32_t au_data_channels;	///	number of interleaved channels in the audio stream. stored big endian in the file.
+	uint32_t metadata_len;     ///number of bytes for metadata storage
+	char *metadata;
 }BMO_au_header_t;
 
 /* these codes are straight off Wikipedia's page on sun AU */
