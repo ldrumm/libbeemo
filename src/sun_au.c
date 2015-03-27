@@ -24,13 +24,13 @@
         | ((0xff000000 &(i))>> 24))
 
 #define native_32(i, host_be, file_le)\
-    (((host_be) && (file_le))||((!host_be) && (!file_le))) ? _swap32((i)): (i))
+    ((((host_be) && (file_le))||((!host_be) && (!file_le))) ? _swap32((i)): (i))
 
 #define be32(i, host_be)\
-    ((host_be) ? (i): _swap32((i))
+    ((host_be) ? (i): _swap32((i)))
 
 
-/** Opens a sun .au file as a buffer object
+/** Opens a sun .au file as a buffer object.
 Standard sun .au files and little endian files with or without metadata are opened.
 Only PCM and floating point audio is supported.
 Metadata is ignored.
@@ -61,9 +61,9 @@ bmo_fopen_sun(const char *path, uint32_t flags)
 	    bmo_err("%s does not exist or is empty\n", path);
 	    return NULL;
 	}
-	if(size < 24){
+	if(size < AU_HEADER_SIZE - 4){
 	    bmo_err("`%s`'s header is too short\n", path);
-		goto fail;
+		return NULL;
 	}
 	// If we want to write to the file, we need to assure that we've mapped readwrite
     assert(((flags & BMO_MAP_READWRITE) == 0)||(flags & BMO_MAPPED_FILE_DATA));
@@ -112,7 +112,7 @@ bmo_fopen_sun(const char *path, uint32_t flags)
         #endif
         bmo_info(
             "AU file has metadata of %zu bytes\n",
-            (size_t)header.au_data_offset - (AU_HEADER_SIZE  - 4);
+            (size_t)header.au_data_offset - (AU_HEADER_SIZE - 4)
         );
     }
 
@@ -132,7 +132,7 @@ bmo_fopen_sun(const char *path, uint32_t flags)
         header.au_data_channels
     );
 
-    if(header.au_data_offset < AU_HEADER_SIZE ){
+    if(header.au_data_offset < AU_HEADER_SIZE){
         bmo_info("'%s' has non-standard data offset of %u\n",
             path, header.au_data_offset
         );
@@ -142,7 +142,7 @@ bmo_fopen_sun(const char *path, uint32_t flags)
         bmo_err("%s has no audio data section\n", path);
         goto fail;
     }
-    if(header.au_data_offset >= size -1 || header.au_data_offset < AU_HEADER_SIZE  - 4){
+    if(header.au_data_offset >= size -1 || header.au_data_offset < AU_HEADER_SIZE - 4){
         //possible overflow attempt or just corrupt.
         bmo_info("Badly crafted header\n");
         goto fail;
@@ -230,20 +230,20 @@ int bmo_fwrite_header_sun(FILE *file, uint32_t flags, uint32_t channels, uint32_
 
 	header.au_magic_number = 0x2e736e64;
 	header.au_data_offset = be32(AU_HEADER_SIZE, host_be);
-	header.au_data_size be32(
+	header.au_data_size = be32(
         (frames
             ? (UINT32_MAX / (bmo_fmt_stride(flags) * channels)) > frames
                 ? bmo_fmt_stride(flags) * frames * channels: AU_UNKOWN_LEN
             : AU_UNKOWN_LEN
         ),
-	   host_be,
+	   host_be
 	);
 	header.au_data_sample_rate = be32(rate, host_be);
 	header.au_data_channels = be32(channels, host_be);
 
     uint32_t enc;
 	switch(encoding){
-		case BMO_FMT_PCM_8: = AU_FORMAT_8_BIT_PCM; break;
+		case BMO_FMT_PCM_8: enc = AU_FORMAT_8_BIT_PCM; break;
 		case BMO_FMT_PCM_16_LE:	enc = AU_FORMAT_16_BIT_PCM; break;
 		case BMO_FMT_PCM_24_LE:	enc = AU_FORMAT_24_BIT_PCM; break;
 		case BMO_FMT_PCM_32_LE:	enc = AU_FORMAT_32_BIT_PCM; break;
@@ -288,6 +288,7 @@ of @file are unspecified.
 size_t bmo_fwrite_sun(BMO_buffer_obj_t *buffer, FILE *file, uint32_t flags)
 {
 	uint32_t encoding = bmo_fmt_enc(flags);
+    size_t written = 0;
 
     if(!(encoding & AU_BMO_SUPPORTED_FORMATS)){
 		bmo_err("Unsupported Sun/AU format type:%x\n", encoding);
@@ -340,20 +341,23 @@ size_t bmo_buf_save_sun(BMO_buffer_obj_t *buffer, const char *path, uint32_t fla
 	struct stat statbuf;
 	FILE *file = NULL;
 	if(!buffer){
-		bmo_err( "passed NULL pointer - no AU file written\n");
+		bmo_err("passed NULL pointer - no AU file written\n");
 		return 0;
 	}
 
 	/* check and open file for writing */
 	if((stat(path, &statbuf)) != -1){
-		bmo_err( "%s exists, data not written\n", path);
+		bmo_err("%s exists, data not written\n", path);
 		return 0;
 	}
 
 	file = fopen(path, "wb");
 	if(!file){
-		bmo_err( "file open failure\n");
+		bmo_err("file open failure\n");
 		return 0;
 	}
-	return bmo_fwrite_sun(buffer, file, flags);
+	size_t ret = bmo_fwrite_sun(buffer, file, flags);
+	fclose(file);
+
+	return ret;
 }
