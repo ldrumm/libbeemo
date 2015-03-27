@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+
 #include "buffer.h"
 #include "import_export.h"
 #include "drivers/driver_utils.h"
@@ -19,6 +20,7 @@ static int _bmo_dsp_init(void * dsp, uint32_t flags)
     (void)flags;
     return 0;
 }
+
 static int _bmo_dsp_update(void * obj, uint32_t flags)
 {
     //just copy input buffers to output.
@@ -27,6 +29,7 @@ static int _bmo_dsp_update(void * obj, uint32_t flags)
     bmo_mb_cpy(dsp->out_buffers, dsp->in_buffers, dsp->channels, dsp->frames);
     return 0;
 }
+
 static int _bmo_dsp_close(void * dsp, uint32_t flags)
 {
     //Well apparently it does nothing...
@@ -34,7 +37,6 @@ static int _bmo_dsp_close(void * dsp, uint32_t flags)
     bmo_dsp_close(dsp);
     return 0;
 }
-
 
 BMO_dsp_obj_t *
 bmo_dsp_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
@@ -102,6 +104,7 @@ _bmo_dsp_rb_update(void * obj, uint32_t flags)
     BMO_dsp_obj_t * dsp = (BMO_dsp_obj_t *)obj;
     if(dsp->flags & BMO_DSP_TYPE_OUTPUT){
         bmo_write_rb(dsp->handle, dsp->in_buffers, dsp->frames);
+        bmo_mb_cpy(dsp->out_buffers, dsp->in_buffers, dsp->channels, dsp->frames);
     }
     else if(dsp->flags & BMO_DSP_TYPE_INPUT){
         bmo_zero_mb(dsp->out_buffers, dsp->channels, dsp->frames);
@@ -109,6 +112,7 @@ _bmo_dsp_rb_update(void * obj, uint32_t flags)
     }
     else{
         assert(0 && "Ringbuffer dsp object must be declared as input or output"); //Bad type declarations
+        return -1;
     }
     //TODO error handling in rb_*()calls
     return 0;
@@ -203,16 +207,5 @@ bmo_dsp_bo_new(void * bo, uint32_t flags, uint32_t channels, uint32_t frames, ui
     dsp->type = BMO_DSP_OBJ_BO;
     dsp->flags = flags; ///FIXME This is already set in bmo_dsp_new()  but that behaviour may change.
     return dsp;
-}
-
-BMO_dsp_obj_t *
-bmo_dsp_bo_new_fopen(const char * path, uint32_t flags, uint32_t frames)
-{
-    BMO_buffer_obj_t * bo = bmo_fopen(path, flags);
-    if(!bo){
-        bmo_err("couldn't create buffer object from file. '%s' could not be opened\n", path);
-        return NULL;
-    }
-    return bmo_dsp_bo_new(bo, flags, bo->channels, frames, bo->rate);
 }
 
