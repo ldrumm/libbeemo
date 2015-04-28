@@ -174,6 +174,7 @@ serialize_callback(BMO_dsp_obj_t * node, void * userdata)
 
     if(!serializer){
         bmo_err("serializer not found for type'%u'", node->type);
+        free(deps);
         return -1;
     }
     char * data = serializer->serialize(node);
