@@ -6,7 +6,7 @@
 #include "../src/error.h"
 #include "../src/drivers/ringbuffer.h"
 
-#define LEN 5024000
+#define LEN 65536
 #define FRAMES 1024
 #define CHANNELS 8
 
