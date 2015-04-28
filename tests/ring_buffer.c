@@ -57,6 +57,12 @@ int main(void)
 		}
 	}
 	bmo_info("input and processed buffers are identical\n");
-
+	for(uint32_t ch = 0; ch < CHANNELS; ch++) {
+		free(input[ch]);
+		free(output[ch]);
+	}
+    free(input);
+    free(output);
+    bmo_rb_free(rb);
 	exit(EXIT_SUCCESS);
 }

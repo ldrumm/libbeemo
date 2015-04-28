@@ -93,6 +93,7 @@ int main(void)
         src = range(&count, &bytes, binfmts[i].fmt);
         dest = malloc(bytes);
         assert(dest);
+        assert(count);
         intermediate = malloc(sizeof(float) * count);
         assert(intermediate);
         bmo_conv_ipcmtoif(intermediate, src, BMO_FMT_NATIVE_FLOAT, binfmts[i].fmt, count);
