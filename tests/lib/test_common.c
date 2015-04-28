@@ -86,7 +86,7 @@ void assert_multibuf_equal(float **a, float **b, uint32_t channels, uint32_t fra
 static void _setup_logging(void)
 {
     bmo_verbosity(BMO_MESSAGE_DEBUG);
-    const char * env = getenv("LOGGING");
+    const char * env = getenv("LOGLEVEL");
     if(env){
         if(strcasecmp(env, "INFO")==0){
             bmo_verbosity(BMO_MESSAGE_INFO);
@@ -105,12 +105,19 @@ static void _setup_logging(void)
 
 static void _setup_driver(void)
 {
-    #ifdef BMO_HAVE_JACK
-    DRIVER = getenv("JACK") ? BMO_JACK_DRIVER : 0;
-    #endif
-    #ifdef BMO_HAVE_PORTAUDIO
-    DRIVER = getenv("PORTAUDIO") ? BMO_PORTAUDIO_DRIVER : DRIVER;
-    #endif
+    const char * env = getenv("DRIVER");
+    if(env){
+        #ifdef BMO_HAVE_JACK
+        if(strcasecmp(env, "JACK") == 0){
+            DRIVER = BMO_JACK_DRIVER;
+        }
+        #endif
+        #ifdef BMO_HAVE_PORTAUDIO
+        if(strcasecmp(env, "PORTAUDIO") == 0){
+            DRIVER = BMO_PORTAUDIO_DRIVER;
+        }
+        #endif
+    }
 }
 
 void bmo_test_setup(void)
@@ -119,13 +126,7 @@ void bmo_test_setup(void)
 	winsetup();
 	#endif
 
-	const char * env;
-	env = getenv("VERBOSITY");
-	if(env){
-	    int v = atoi(env);
-	    assert(v > 0 && v < BMO_MESSAGE_DEBUG);
-		bmo_verbosity(v);
-	}
+	const char *env;
 	env = getenv("CHANNELS");
 	if(env){
 		CHANNELS = atoi(env);
