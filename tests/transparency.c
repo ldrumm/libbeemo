@@ -8,7 +8,7 @@
 #include "lib/test_common.c"
 extern float _bmo_fmt_pcm_range(uint32_t);
 
-void *range(size_t *count, size_t *bytes, int fmt)
+void *range(size_t *count, size_t *bytes, uint32_t fmt)
 {
     /** Like a bastardised version of Python's `range()` function,
     generate an array containing every value in the given format dynamic range.
@@ -16,8 +16,8 @@ void *range(size_t *count, size_t *bytes, int fmt)
     do its thing...
     */
     *count = (size_t)_bmo_fmt_pcm_range(fmt);
-    *bytes = bmo_fmt_stride(fmt) * *count;
-    void *samples = malloc(*bytes);
+    *bytes = bmo_fmt_stride(fmt) * (*count);
+    void *samples = calloc(*bytes + 1, 1);  //Add an extra byte to avoid illegal access with 24bit.
     assert(samples);
     size_t i = *count;
     #define LOOP() while(i--){array[i] = i;}
@@ -38,7 +38,7 @@ void *range(size_t *count, size_t *bytes, int fmt)
             ;
             //packed 24bit is always a pain...
             uint8_t *array = samples;
-            for(size_t j= 0; j < i * 3; j += 3){
+            for(size_t j = 0; j < (i * 3); j += 3){
                 uint32_t *p = (uint32_t*) & array[j];
                 #if BMO_ENDIAN_LITTLE
                 *p = (0x00ffffff & i) | (*p & 0xff000000);
@@ -93,6 +93,7 @@ int main(void)
         src = range(&count, &bytes, binfmts[i].fmt);
         dest = malloc(bytes);
         assert(dest);
+        assert(count);
         intermediate = malloc(sizeof(float) * count);
         assert(intermediate);
         bmo_conv_ipcmtoif(intermediate, src, BMO_FMT_NATIVE_FLOAT, binfmts[i].fmt, count);

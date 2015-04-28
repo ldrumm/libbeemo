@@ -6,7 +6,7 @@
 #include "../src/error.h"
 #include "../src/drivers/ringbuffer.h"
 
-#define LEN 5024000
+#define LEN 65536
 #define FRAMES 1024
 #define CHANNELS 8
 
@@ -57,6 +57,12 @@ int main(void)
 		}
 	}
 	bmo_info("input and processed buffers are identical\n");
-
+	for(uint32_t ch = 0; ch < CHANNELS; ch++) {
+		free(input[ch]);
+		free(output[ch]);
+	}
+    free(input);
+    free(output);
+    bmo_rb_free(rb);
 	exit(EXIT_SUCCESS);
 }
