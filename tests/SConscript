@@ -104,7 +104,7 @@ def run_all_tests(env, sources_list, **kwargs):
         path = target[0].abspath
         commands = [path] + [p for p in(x.replace('$', path).split() for x in extra_commands)]
         for command in commands:
-            print("running %s\n" % command)
+            _print("running %s\n" % command)
             try:
                 ps = subprocess.Popen(command,
                     stdout=subprocess.PIPE,
