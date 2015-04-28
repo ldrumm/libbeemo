@@ -1,3 +1,4 @@
+#ifdef BMO_HAVE_LADSPA
 #define _XOPEN_SOURCE 500
 #include <stdlib.h>
 #include <math.h>
@@ -59,3 +60,6 @@ int main(void)
     free(inpath);
     return 0;
 }
+#else
+int main(void){}
+#endif
