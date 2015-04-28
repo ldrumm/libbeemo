@@ -13,8 +13,9 @@ def _print(*args):
 
 
 class ArgOpts(object):
-    def __init__(self, env, args):
-        self.args = args
+    def __init__(self, env, enable, disable):
+        self.enable = enable and enable.split(',') or list()
+        self.disable = disable and disable.split(',') or list()
         self.env = env
 
     def enable_release(self):
@@ -30,6 +31,16 @@ class ArgOpts(object):
     def enable_profile(self):
         self.env.Append(CCFLAGS=['-O2', '-ffast-math', '-g'])
 
+    def enable_asan(self):
+        _print("enabling adress sanitizer")
+        asan_symbolizer = os.environ.get('ASAN_SYMBOLIZER_PATH')
+        if asan_symbolizer:
+            self.env["ENV"].update(ASAN_SYMBOLIZER_PATH=asan_symbolizer)
+
+        env.Append(LDFLAGS=['-fsanitize=address'])
+        env.Append(CCFLAGS=['-fsanitize=address'])
+        env.Append(LIBS=['asan'])
+
     def enable_analyse(self):
         """
         This fetches environment variables set by clang's scan-build
@@ -38,11 +49,9 @@ class ArgOpts(object):
         self.env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
 
     def configure(self):
-        for arg in self.args:
+        for arg in self.enable:
             try:
-                option = getattr(self, 'enable_' + arg)
-                if self.args[arg] in ('1', 'true', 'yes'):
-                    option()
+                getattr(self, 'enable_' + arg)()
             except AttributeError:
                 _print("ignoring unknown configure option:'%s" % arg)
 
@@ -69,7 +78,8 @@ def mingw(env):
     env.Append(CCFLAGS = ['-std=gnu99'])
 
 
-def check_dependencies(env, conf=None):
+def check_dependencies(env, conf=None, opts=None):
+    opts = opts or list()
     conf = conf or Configure(env)
     config = {}
     config['endian'] = sys.byteorder
@@ -99,6 +109,15 @@ def check_dependencies(env, conf=None):
     config['have_ladspa'] = conf.CheckHeader('ladspa.h')
     if not config['have_lua']:
         raise BuildError(errstr='Essential dependencies not found; cannot build without Lua')
+
+    for disabled in opts.disable:
+        try:
+            #skip if not a valid get
+            _print("disabling %s" % disabled)
+            if( config['have_' + disabled]):
+                config['have_' + disabled] = False
+        except KeyError:
+            raise BuildError(errstr="invalid option: '%s'" % disabled)
     return config
 
 
@@ -117,13 +136,14 @@ def configure_cpp_switches(env, config):
             defines.extend(["BMO_" + key.upper()+ "_" + str(config[key]).upper()])
         elif((type(config[key]) == bool) and config[key] == True):
             defines.extend(["BMO_"+ key.upper() ])
-    env.Append(CPPDEFINES=defines
-)
+    env.Append(CPPDEFINES=defines)
+
 
 ############ Environment / Config ############
 SetOption('num_jobs', multiprocessing.cpu_count())
 AddOption('--disable', type='string')
-env = Environment(ENV=os.environ)
+AddOption('--enable', type='string')
+env = Environment()
 std_switches(env)
 if os.name == 'nt':
     # MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
@@ -148,19 +168,10 @@ beemo = env.SharedLibrary('beemo', env['source'])
 
 if not env.GetOption('clean'):
     # Only parse these options during a real build because cleans take too long otherwise
-    opts = ArgOpts(env, ARGUMENTS)
+    opts = ArgOpts(env, env.GetOption('enable'), env.GetOption('disable'))
     opts.configure()
     conf = Configure(env)
-    deps = check_dependencies(env, conf)
-    disable = env.GetOption('disable')
-    for disabled in (disable and disable.split(',') or list()):
-        try:
-            #skip if not a valid get
-            _print("disabling %s" % disabled)
-            if( deps['have_' + disabled]):
-                deps['have_' + disabled] = False
-        except KeyError:
-            raise BuildError(errstr="invalid option: '%s'" % disabled)
+    deps = check_dependencies(env, conf, opts)
     configure_cpp_switches(env, deps)
     env = conf.Finish()
 
