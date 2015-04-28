@@ -1,7 +1,7 @@
 language: c
 env:
-  - RELEASE='release=true'
-  - RELEASE='release=false'
+  - RELEASE='--enable=release'
+  - RELEASE=''
 compiler:
   - gcc
   - clang
