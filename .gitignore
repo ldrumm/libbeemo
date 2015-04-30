@@ -51,6 +51,9 @@ cachegrind.out.*
 
 # Doxgen Generated files #
 ##########################
+doxygen_sqlite3.db
+html/
+latex/
 
 # OS generated files #
 ######################

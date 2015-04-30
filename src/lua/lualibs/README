@@ -1,0 +1,8 @@
+Any Lua source in this directory will be embedded into the interpreter as part of the build.
+
+As with most programming systems, it is advisable to limit the use of globals where possible.
+Use of Lua's `require` import mechanism is not supported for scripts in this directory as they
+must always be available to the embedded source, and we don't yet have a mechanism to make that happen during the build.
+
+The general advice (while the project is still discovering the best approach at least) is to
+add your functions the `dsp` global table, or provide your packages as a table in the global namespace when it makes sense to do so.
