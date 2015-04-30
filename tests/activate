@@ -1,10 +1,58 @@
+_linkervar() {
+    if [ $(uname -s) = "Darwin" ] ; then
+        echo "DYLD_LIBRARY_PATH"
+    else
+        echo "LD_LIBRARY_PATH"
+    fi
+}
+
+_ZSH_SOURCE="${0%/*}" # required otherwise zsh reports the script name as the function
+_ldpath() {
+    # Because this script is kept in a subdirectory of the main library, we
+    # need to set the *LD_LIBRARY_PATH var to the parent directory.
+    # However, getting the directory of a shell script being sourced is non-portable,
+    # and relies on stuff that Mac OS X (in particular) doesn't supply, as well
+    # stuff that only seems possible in zsh, bash, and ksh; this function is ugly on it's face.
+
+    # https://unix.stackexchange.com/questions/96203/find-location-of-sourced-shell-script?lq=1
+    # has the history lesson
+    if [ -n "$BASH_SOURCE" ] ; then
+        echo "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )/";
+        return 0;
+    elif [ -n "$ZSH_VERSION" ] ; then
+        echo "$(python -c "import os, sys; print(os.path.dirname(os.path.realpath('$_ZSH_SOURCE/..')))")";
+        return 0;
+    fi
+
+    echo 1>&2 "Your shell is not currently supported. Please 'export $(_linkervar)=\"Path to project root' instead"
+    return 1;
+}
+
 deactivate () {
     # reset old environment variables
-    export LD_LIBRARY_PATH="$_OLD_LD_LIBRARY_PATH"
-    unset _OLD_LD_LIBRARY_PATH
-    echo $LD_LIBRARY_PATH
+    export "$(_linkervar)"="$_OLD_LIBRARY_PATH"
+    export PS1="$_OLD_PS1"
+    unset _OLD_LIBRARY_PATH
+    unset _OLD_PS1
+    unset _linkervar
+    unset -f deactivate
 }
-export _OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/..
-export LD_LIBRARY_PATH=$DIR
-echo $LD_LIBRARY_PATH
+
+# We assume that only one of LD_LIBRARY_PATH or DYLD_LIBRARY_PATH is set at a time,
+# given that `DYLD_` is mac specific and `LD_` is all other unixes.
+# otherwise the alternative is something like `_OLD_LIBRARY_PATH="$(eval $(echo "eval 'echo \$$(_linkervar)'" ))"`
+# people seem to not like eval. Let's not poke that wound.
+export _OLD_LIBRARY_PATH="$LD_LIBRARY_PATH$DYLD_LIBRARY_PATH"
+export _OLD_PS1="$PS1"
+
+_LDPATH="$(_ldpath)"
+if [ $? -eq 1 ] ; then
+    return 1
+fi
+
+export "$(_linkervar)"="$_LDPATH"
+export PS1="(libbeemo-dev)$PS1"
+
+unset _ldpath
+unset _LDPATH
+unset _ZSH_SOURCE
