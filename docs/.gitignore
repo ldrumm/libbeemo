@@ -1,0 +1,4 @@
+xml/
+build/
+doxygen_sqlite3.db
+!.gitignore
