@@ -1,17 +1,18 @@
 #ifdef BMO_HAVE_JACK
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <jack/types.h>
 #include <jack/jack.h>
 #include <jack/statistics.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "jack_functions.h"
 #include "../definitions.h"
 #include "../deleteme_sched.h"
 #include "../error.h"
+#include "../dsp/simple.h"
+#include "jack_functions.h"
 #include "ringbuffer.h"
 #include "driver_utils.h"
-#include "../dsp/simple.h"
 
 
 static void
@@ -57,7 +58,6 @@ _bmo_jack_bufsize_cb(jack_nframes_t frames, void * arg)
 {
     (void)arg;
     bmo_err("jack buffersize has been set at %d frames/call\n", frames);
-//    bmo_jack_stop(arg);
     return 0;
 }
 
@@ -67,7 +67,6 @@ _bmo_jack_src_cb(jack_nframes_t src, void *arg)
     (void)arg;
     bmo_err( "AUD:Jack Samplerate has changed to %d. \n    \
         Will attempt to update the output, but expect weirdness.\n", src);
-//    bmo_jack_stop(arg);
     return 0;
 }
 
@@ -80,7 +79,7 @@ _bmo_jack_process_cb(jack_nframes_t frames, void *arg)
     uint32_t i, j;
     i = j = 0;
 
-    BMO_state_t * state = (BMO_state_t *) arg;
+    BMO_state_t * state = arg;
     jack_default_audio_sample_t ** outs[bmo_playback_count(state)];
     /*get output ports pointer*/
     while(i< state->n_playback_ch){
@@ -88,7 +87,7 @@ _bmo_jack_process_cb(jack_nframes_t frames, void *arg)
             if(jack_port_connected(state->driver.jack.output_ports[i]) > 0){
                 outs[j] = jack_port_get_buffer(state->driver.jack.output_ports[i], frames);
                 if(!outs[j]){
-                    bmo_err("outport %d is null");
+                    bmo_err("outport %d is null\n");
                     break;
                 }
                 bmo_zero_sb((float *)outs[j], frames);
@@ -136,8 +135,6 @@ BMO_state_t * bmo_jack_start(
 )
 {
     (void) flags; //FIXME unused
-    size_t portname_buf_len = jack_port_name_size(); //includes the trailing NUL
-    char * portname_buf;
     uint32_t i = 0;
 
     if(!state){
@@ -180,7 +177,7 @@ BMO_state_t * bmo_jack_start(
     state->driver.jack.client_name = jack_get_client_name(state->driver.jack.client);
 
     /* register the processing, error, and event-notification callbacks with jack */
-    jack_set_process_callback (state->driver.jack.client, _bmo_jack_process_cb, state);
+    jack_set_process_callback(state->driver.jack.client, _bmo_jack_process_cb, state);
     jack_on_shutdown(state->driver.jack.client, _bmo_jack_finished_cb, state);
     jack_set_xrun_callback(state->driver.jack.client, _bmo_jack_xrun_cb, state);
     jack_set_sample_rate_callback(state->driver.jack.client, _bmo_jack_src_cb, state);
@@ -196,10 +193,11 @@ BMO_state_t * bmo_jack_start(
     if(!state->ringbuffer){
         state->ringbuffer = bmo_init_rb(state->buffer_size, channels);
         if(!state->ringbuffer)
+            jack_client_close(state->driver.jack.client);
             return NULL;
     }
 
-    state->driver_rate = jack_get_sample_rate (state->driver.jack.client);
+    state->driver_rate = jack_get_sample_rate(state->driver.jack.client);
     if(state->driver_rate != rate){
         bmo_info("jack is running at %dHz. using this instead of requested %d\n",
             state->driver_rate,
@@ -209,13 +207,21 @@ BMO_state_t * bmo_jack_start(
     }
 
     /* create client output ports of the requested number of channels */
-    portname_buf = calloc(portname_buf_len, sizeof(char));
-    if(!portname_buf){
-        bmo_err("out of memory\n");
-        return NULL;
-    }
+    size_t portname_buf_len = jack_port_name_size(); //includes the trailing NUL
+    char portname_buf[portname_buf_len];
+    // Jack docs just says "This will be a constant", but in practice is plenty big enough.
+    assert(portname_buf_len > 24);
+
     for(i = 0; i < channels; i++){
-        snprintf(portname_buf, portname_buf_len, "channel %d", i+1);
+        int chars = snprintf(portname_buf, portname_buf_len, "channel %d", i + 1);
+        if(chars < 0){
+            bmo_err("couldn't assign jack port names:'%s'\n");
+            jack_client_close(state->driver.jack.client);
+            return NULL;
+        }
+        if((size_t)chars == portname_buf_len){
+            portname_buf[portname_buf_len - 1] = '\0';
+        }
         state->driver.jack.output_ports[i] = jack_port_register(
             state->driver.jack.client,
             portname_buf,
@@ -225,18 +231,16 @@ BMO_state_t * bmo_jack_start(
         );
         if((!state->driver.jack.output_ports[i])){
             bmo_err("no more Jack ports available\n");
-            free(portname_buf);
-            return NULL;
+            goto fail;
         }
     }
-    free(portname_buf);
     bmo_debug("created %d client output ports\n", i);
     state->n_playback_ch = i;
 
     /*start jack processing this client*/
     if(jack_activate(state->driver.jack.client)){
         bmo_err("Jack cannot activate client");
-        return NULL;
+        goto fail;
     }
 
     /* query and connect client outputs to jack inputs*/
@@ -248,18 +252,16 @@ BMO_state_t * bmo_jack_start(
     );
     if(!state->driver.jack.ports){
         bmo_err("Couldn't get any ports into jack server\n");
-        bmo_jack_stop(state);
-        return NULL;
+        goto fail;
     }
 
-    for(i = 0; state->driver.jack.ports[i] ; i++){
+    for(i = 0; state->driver.jack.ports[i]; i++){
         ;
     }
     bmo_debug("Jack has %d physical input ports\n", i);
     if(!i){
         bmo_err("Jack has no input ports available\n");
-        bmo_jack_stop(state);
-        return NULL;
+        goto fail;
     }
     state->n_playback_ch = i;
 
@@ -287,6 +289,9 @@ BMO_state_t * bmo_jack_start(
     }
 
     return state;
+fail:
+    bmo_jack_stop(state);
+    return NULL;
 }
 
 
