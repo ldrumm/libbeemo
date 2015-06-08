@@ -41,23 +41,24 @@ as mentioned above. ``bmo_yourdriver_start()`` must set
 state->driver\_id to a unique symbolic identifier for your driver. see
 ``src/definitions.h`` for the current list.
 
-See\ ``src/drivers/pa.c`` and ``src/definitions.h``for the Portaudio driver implementation.
+See ``src/drivers/pa.c`` and ``src/definitions.h`` for the Portaudio driver implementation.
 
 
 Registering a Driver at Runtime
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    .. warning::
-        This is a TODO. Ignore this section while this warning is here.
+.. warning::
+    This is a **TODO**. Ignore this section while this warning is here.
 
 If you're using an audio driver that's so hip that nobody is likely to benefit from it (or your bogonic employer is afraid of open-source), you can build the vanilla library as usual, and then register your driver at runtime.
 
+.. code-block:: C
 
-    ``bmo_register_driver(BMO_state_t *state, BMO_driver_t *driver)``
-        TODO
-    typedef struct BMO_driver_t{
-    int (*start)(BMO_state_t * state, uint32_t channels, uint32_t rate, uint32_t buf_len, uint32_t flags, void *userdata)
-    int (*stop)(BMO_state_t *state, void *userdata)
-    uint32_t driver_id;
-    const char * name;
-    void * userdata;
-}
+    typedef struct BMO_driver_t {
+        int (*start)(BMO_state_t * state, uint32_t channels, uint32_t rate, uint32_t buf_len, uint32_t flags, void *userdata);
+        int (*stop)(BMO_state_t *state, void *userdata);
+        uint32_t driver_id;
+        const char * name;
+        void * userdata;
+    }
+
+    bmo_register_driver(BMO_state_t *state, BMO_driver_t *driver);

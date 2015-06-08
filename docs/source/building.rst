@@ -2,7 +2,7 @@ Building
 ========
 Building ``libbeemo`` is pretty straightforward as far as it goes. However, it varies a bit depending on your platform.
 For this tutorial, we'll be assuming a Linux based OS using the GCC C compiler.
-While libbeemo works just-fine-thankyou on windows, building any C or C++ software is frought with difficulty on that platform, and involves a lot more "Click on this"-type instructions, rather than "paste this into the console and be done with it" type instructions.
+While libbeemo works just-fine-thankyou on windows, building any C or C++ software is fraught with difficulty on that platform, and involves a lot more "Click on this"-type instructions, rather than "paste this into the console and be done with it" type instructions.
 
 To ease the lexical burden, we're going to write from a Linux-centric perspective.
 However, once the build-dependencies are installed, the steps are the same.
@@ -15,7 +15,7 @@ First off, the only hard dependencies are as follows
     - A C99 conformant compiler (e.g. ``gcc``, ``clang``, ``icc``)
     - ``pthreads`` support (shipped with the compiler)
     - `liblua <http://lua.org>`_ (version 5.2)
-    - `SCons <http://scons.org>`_for building (requires a Python2.7 installation)
+    - `SCons <http://scons.org>`_ for building (requires a Python2.7 installation)
 
 For completeness you'll also want the following development headers and libraries installed.
 
@@ -23,10 +23,10 @@ For completeness you'll also want the following development headers and librarie
     - `kibjack <http://jackaudio.org>`_ (for advanced audio routing outside the library)
     - `libsndfile <http://mega-nerd.com/libsndfile/>`_ (for reading audio other than simple .au and .wav files)
     - `ladspa <http://www.ladspa.org/>`_
-    - `libasan (clang/GCC 4.8+; testing only)
-    - `valgrind (Linux only; testing only)
-    - `scan-build (clang; testing only)
-    - `LADSPA header file (for LADSPA plugin support)
+    - ``libasan`` (clang/GCC 4.8+; testing only)
+    - ``valgrind`` (Linux only; testing only)
+    - ``scan-build`` (clang; testing only)
+    - ``LADSPA`` header file (for LADSPA plugin support)
 
 
 For Debian-based systems like Ubuntu, the following should get you
@@ -153,7 +153,7 @@ Notes on tested platforms
    Due to the overhead, this doesn't happen often.
 -  Macintosh builds are done infrequently, but generally par with the
    Linux builds.
--  The test suite and general functionality of the library is excercised
+-  The test suite and general functionality of the library is exercised
    on Win32 using MinGW on a fairly regular basis. Though not part of
    the automated test suite, Windows is considered a target platform.
 
@@ -169,6 +169,7 @@ If you're using a POSIX compatible shell::
 
     . tests/activate
     scons tests
+
 ...should do it. On Win32::
 
     call tests\activate
@@ -176,4 +177,5 @@ If you're using a POSIX compatible shell::
 
 If everything goes as planned, you should again see the friendly ``scons: done building targets.`` echoed onto your terminal indicating the tests passed.
 For a more thorough treatment of the tests, see :ref:`tests`
+
 ..doxygenindex::
