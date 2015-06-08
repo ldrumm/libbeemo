@@ -47,7 +47,9 @@ int fp32_au_header(uint32_t channels, uint32_t rate, FILE * file)
     assert(n == 28);
     return n == 28;
 }
-
+#ifndef BMO_HAVE_LADSPA
+int main(void){}
+#else
 int main(int argc, char ** argv)
 {
     bmo_test_setup();
@@ -98,3 +100,4 @@ int main(int argc, char ** argv)
     fclose(out);
     return 0;
 }
+#endif
