@@ -57,7 +57,7 @@ void bmo_rb_free(BMO_ringbuffer_t * rb)
 } 
 
 
-int bmo_write_rb(BMO_ringbuffer_t * rb, float ** in_buf, uint32_t frames)
+uint32_t bmo_write_rb(BMO_ringbuffer_t * rb, float ** in_buf, uint32_t frames)
 {
 	if( !rb || !in_buf )
 		return -1;
@@ -92,7 +92,7 @@ int bmo_write_rb(BMO_ringbuffer_t * rb, float ** in_buf, uint32_t frames)
 }
 
 
-int bmo_read_rb(BMO_ringbuffer_t * rb, float ** out_buf, uint32_t frames)
+uint32_t bmo_read_rb(BMO_ringbuffer_t * rb, float ** out_buf, uint32_t frames)
 {
 	if( !rb || !out_buf )
 		return -1;
@@ -121,8 +121,8 @@ int bmo_read_rb(BMO_ringbuffer_t * rb, float ** out_buf, uint32_t frames)
 			rb->read_index = 0;
 		}
 	}
-		rb->read_max_el -= read; //FIXME READ MAX EL MUST BE UPDATED WITH EACH CALL. 
-		rb->write_max_el += read;
+    rb->read_max_el -= read; //FIXME READ MAX EL MUST BE UPDATED WITH EACH CALL.
+    rb->write_max_el += read;
 	
 	return read;
 }

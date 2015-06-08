@@ -18,7 +18,9 @@ _bmo_pa_finished_cb(void * user_data)
 }
 
 static int 
-_bmo_pa_process_cb(const void *ins, void *outs, unsigned long frames, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * data)
+_bmo_pa_process_cb(
+    const void *ins, void *outs, unsigned long frames, const PaStreamCallbackTimeInfo * time_info,
+    PaStreamCallbackFlags status_flags, void * data)
 {	
 	(void) ins;			//TODO
 	(void)time_info; 	//TODO
@@ -33,7 +35,10 @@ _bmo_pa_process_cb(const void *ins, void *outs, unsigned long frames, const PaSt
 		return paComplete;
 	}
 	else if (bmo_status(state) == BMO_DSP_RUNNING){
-		bmo_read_rb(state->ringbuffer, (float **) outs, (uint32_t)frames);
+		uint32_t frames_read = bmo_read_rb(state->ringbuffer, (float **) outs, (uint32_t)frames);
+		if(frames_read != frames){
+		    bmo_err("an xrun of %f frames occurred\n", (double) frames - frames_read);
+		}
 	}
 	state->dsp_load = (float)Pa_GetStreamCpuLoad(state->driver.pa.stream);
 	bmo_driver_callback_done(state, BMO_DSP_RUNNING);

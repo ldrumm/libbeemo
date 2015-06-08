@@ -97,7 +97,10 @@ _bmo_jack_process_cb(jack_nframes_t frames, void *arg)
         i++;
     }
     if(i == bmo_playback_count(state)){
-        bmo_read_rb(state->ringbuffer, (float **)outs, frames);
+        uint32_t frames_read = bmo_read_rb(state->ringbuffer, (float **)outs, frames);
+        if(frames_read < frames){
+            bmo_err("An underrun of %u samples occurred\n");
+        }
         state->dsp_load = (float)jack_cpu_load(state->driver.jack.client);
         bmo_driver_callback_done(state, BMO_DSP_RUNNING);
         return 0;
@@ -133,8 +136,6 @@ BMO_state_t * bmo_jack_start(
 )
 {
     (void) flags; //FIXME unused
-//    const char * portnames[] =
-//    #include "portnames.h"
     size_t portname_buf_len = jack_port_name_size(); //includes the trailing NUL
     char * portname_buf;
     uint32_t i = 0;
