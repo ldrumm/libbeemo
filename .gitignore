@@ -74,3 +74,6 @@ experiments/
 src/lua/lua_default_text.h
 prepush.sh
 credentials.htdigest
+perf.data*
+compile_commands.json
+tags
