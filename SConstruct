@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import sys
 import os
-import six
 import multiprocessing
 
 from SCons.Errors import BuildError
@@ -155,7 +154,7 @@ def configure_cpp_switches(env, config):
     ]
     named_defines = [
         "BMO_{}_{}".format(key.upper(), val.upper())
-        for key, val in config.items() if isinstance(val, six.string_types)
+        for key, val in config.items() if isinstance(val, str)
     ]
     env.Append(CPPDEFINES=anonymous_defines + named_defines)
 
