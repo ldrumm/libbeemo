@@ -1,15 +1,17 @@
+from __future__ import print_function
+
 import sys
 import os
+import six
 import multiprocessing
 
 from SCons.Errors import BuildError
-from SCons.SConf import SConfWarning
 
 
 def _print(*args):
     if GetOption('silent'):
         return
-    print ' '.join((str(arg) for arg in args))
+    print(*args)
 
 
 class ArgOpts(object):
@@ -31,6 +33,11 @@ class ArgOpts(object):
     def enable_profile(self):
         self.env.Append(CCFLAGS=['-O2', '-ffast-math', '-g'])
 
+    def enable_gprof(self):
+        self.env.Append(CCFLAGS=['-pg'])
+        self.env.Append(LDFLAGS=['-pg'])
+        self.env.Append(LINKFLAGS=['-pg'])
+
     def enable_asan(self):
         _print("enabling adress sanitizer")
         asan_symbolizer = os.environ.get('ASAN_SYMBOLIZER_PATH')
@@ -46,19 +53,24 @@ class ArgOpts(object):
         This fetches environment variables set by clang's scan-build
         to allow clang to run the static analyser
         """
-        self.env["ENV"].update(x for x in os.environ.items() if x[0].startswith("CCC_"))
+        self.env["ENV"].update(
+                (x, y)
+                for x, y in os.environ.items() if x.startswith("CCC_")
+        )
 
     def configure(self):
         for arg in self.enable:
             try:
                 getattr(self, 'enable_' + arg)()
             except AttributeError:
-                _print("ignoring unknown configure option:'%s" % arg)
+                raise BuildError(errstr="Unknown configure option:'%s" % arg)
 
 
 def std_switches(env):
-    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror', '-g3',])
-    env["CC"] = os.getenv("CC") or env["CC"]
+    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror', '-g3'])
+    # enable color output from tools.
+    env['ENV']['TERM'] = os.environ['TERM']
+    env["CC"] = os.getenv("CC", env["CC"])
 
 
 def mingw(env):
@@ -69,13 +81,13 @@ def mingw(env):
     except ValueError:
         pass
 
-    # MinGW is missing a bunch of prototypes which cause build failures, 
+    # MinGW is missing a bunch of prototypes which cause build failures,
     # even though the MinGW CRT includes the definitions
     try:
         env['CCFLAGS'].remove('-Werror',)
     except ValueError:
         pass
-    env.Append(CCFLAGS = ['-std=gnu99'])
+    env.Append(CCFLAGS=['-std=gnu99'])
 
 
 def check_dependencies(env, conf=None, opts=None):
@@ -83,41 +95,48 @@ def check_dependencies(env, conf=None, opts=None):
     conf = conf or Configure(env)
     config = {}
     config['endian'] = sys.byteorder
-    config['have_jack'] = conf.CheckLibWithHeader(
-        'jack', ['jack/jack.h', 'jack/types.h'], 'C'
-    )
-    config['have_pthread'] = conf.CheckLibWithHeader(
-        'pthread', 'pthread.h', 'C'
-    )
+
+    optional_headers = {
+        'ladspa': 'ladspa.h'
+    }
+    optional_libraries = {
+        'jack': ['jack/jack.h', 'jack/types.h'],
+        'pthread': 'pthread.h',
+        'sndfile': 'sndfile.h',
+        'portaudio': 'portaudio.h',
+    }
+    # First check the essentials
     try:
-         env.ParseConfig("pkg-config lua5.2 --cflags --libs")
-         config['have_lua'] = conf.CheckLibWithHeader(
-        'lua5.2', ['lua.h','lauxlib.h'], 'C'
-    )
-    except OSError:
-        _print("***System doesn't have a working pkg-config for Lua5.2 available - fallback config")
+        env.ParseConfig("pkg-config lua5.2 --cflags --libs")
         config['have_lua'] = conf.CheckLibWithHeader(
-            'lua', ['lua.h','lauxlib.h'], 'C'
+            'lua5.2', ['lua.h', 'lauxlib.h'], 'C'
+        )
+    except OSError:
+        _print("Can't find a working pkg-config for Lua5.2 - fallback config")
+        config['have_lua'] = conf.CheckLibWithHeader(
+            'lua', ['lua.h', 'lauxlib.h'], 'C'
         )
 
-    config['have_sndfile'] = conf.CheckLibWithHeader(
-        'sndfile', 'sndfile.h', 'C'
-    )
-    config['have_portaudio'] = conf.CheckLibWithHeader(
-        'portaudio', 'portaudio.h', 'C'
-    )
-    config['have_ladspa'] = conf.CheckHeader('ladspa.h')
     if not config['have_lua']:
-        raise BuildError(errstr='Essential dependencies not found; cannot build without Lua')
+        raise BuildError(errstr='Cannot build without Lua')
 
+    # Now process optional dependencies
+    for name, header in optional_headers.items():
+        config['have_%s' % name] = conf.CheckHeader(header)
+
+    for name, headers in optional_libraries.items():
+        config['have_%s' % name] = conf.CheckLibWithHeader(name, headers, 'C')
+
+    # Any explicitly disabled options are removed
     for disabled in opts.disable:
         try:
-            #skip if not a valid get
+            # skip if not a valid get
             _print("disabling %s" % disabled)
-            if( config['have_' + disabled]):
+            if config['have_' + disabled]:
                 config['have_' + disabled] = False
         except KeyError:
-            raise BuildError(errstr="invalid option: '%s'" % disabled)
+            raise BuildError(errstr="invalid disable option: %r" % disabled)
+
     return config
 
 
@@ -126,24 +145,26 @@ def configure_cpp_switches(env, config):
     receives a list of configure options, then mangles the key and value to
     create C preprocessor defines.
 
-    If the value of the key/value pair is a string, then that string is appended
-    to the key e.g. a big-endian system defines "-DBMO_ENDIAN_BIG when using
-    gcc and /DBMO_ENDIAN_BIG for cl.exe
+    If the value of the key/value pair is a string, then that string is
+    appended to the key e.g. a big-endian system defines "-DBMO_ENDIAN_BIG
+    when using gcc and /DBMO_ENDIAN_BIG for cl.exe
     """
-    defines = []
-    for key in config:
-        if(type(config[key]) != bool):
-            defines.extend(["BMO_" + key.upper()+ "_" + str(config[key]).upper()])
-        elif((type(config[key]) == bool) and config[key] == True):
-            defines.extend(["BMO_"+ key.upper() ])
-    env.Append(CPPDEFINES=defines)
+    anonymous_defines = [
+        "BMO_{}".format(key.upper())
+        for key in filter(lambda x: config[x] == True, config)
+    ]
+    named_defines = [
+        "BMO_{}_{}".format(key.upper(), val.upper())
+        for key, val in config.items() if isinstance(val, six.string_types)
+    ]
+    env.Append(CPPDEFINES=anonymous_defines + named_defines)
 
 
 ############ Environment / Config ############
 SetOption('num_jobs', multiprocessing.cpu_count())
 AddOption('--disable', type='string')
 AddOption('--enable', type='string')
-env = Environment(ENV=os.environ)
+env = Environment()
 std_switches(env)
 if os.name == 'nt':
     # MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
@@ -163,11 +184,11 @@ env.Append(source=[
 
 
 ############ Targets #############
-static = env.Library('beemo', env['source'])
 beemo = env.SharedLibrary('beemo', env['source'])
+static = env.Library('beemo', env['source'])
 
 if not env.GetOption('clean'):
-    # Only parse these options during a real build because cleans take too long otherwise
+    # Only parse options during a real build because cleans should be fast
     opts = ArgOpts(env, env.GetOption('enable'), env.GetOption('disable'))
     opts.configure()
     conf = Configure(env)

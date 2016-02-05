@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import subprocess
 import itertools
@@ -16,9 +18,10 @@ should be a single file.
 If external files need to be built they should be directly #included as
 compilable source.
 Any extraneous external dependencies not part of the main env() will probably
-fail, unless the scons dependency resolver can automatically link the deps as necessary.
+fail, unless the scons dependency resolver can automatically link the deps as
+necessary.
 This is naturally not a robust solution, but allows us to write quick and simple
-tests for the main library.  Hopefully this encourages more sanity-checks.
+tests for the main library. Hopefully this encourages more sanity-checks.
 """
 
 # __file__ is not set so we need to get the path of this file on import.
@@ -31,7 +34,8 @@ __file__ = os.getcwd()
 def _print(*args):
     if GetOption('silent'):
         return
-    print ' '.join((str(arg) for arg in args))
+    print(*args)
+
 
 def run_all_tests(env, sources_list, **kwargs):
     """
@@ -48,7 +52,8 @@ def run_all_tests(env, sources_list, **kwargs):
     immediate failure.
     On completion of the test run, the results are inspected and any failing
     testcase  causes a BuildError to be thrown after failures are listed, and the
-    failed targets are deleted to
+    failed targets are deleted to force the scons dependency resolver to rebuild
+    on the next run.
 
     See http://stackoverflow.com/a/11492516 (and comments) for initial inspiration.
     """
@@ -85,42 +90,49 @@ def run_all_tests(env, sources_list, **kwargs):
             )
             # Hax - The most obvious way to mark the build as dirty is
             # to delete it.
-            [x.remove() for x in nodes]
+            for x in nodes:
+                x.remove()
+
             raise BuildError(
                 errstr=(
                     "\n%d test failures%s"
                     "\n%d test errors%s\n") % (
-                    len(failures),
-                    len(failures) and ": ('%s')" % "', '".join(os.path.basename(test.test_path) for test in failures) or '',
-                    len(errors),
-                    len(errors) and ": ('%s')" % "', '".join(os.path.basename(test.test_path) for test in errors) or '',
+                        len(failures),
+                        failures and ": ('%s')" % "', '".join(
+                            os.path.basename(test.test_path) for test in failures
+                            ) or '',
+                        len(errors),
+                        errors and ": ('%s')" % "', '".join(
+                            os.path.basename(test.test_path) for test in errors
+                    ) or '',
                 ),
-                node = nodes,
+                node=nodes,
             )
         return 0
 
     def _execute_test(target, source, env):
-        #we want our tests run with a PWD of their source.  This requires hax.
+        # We want our tests run with a PWD of their source; hax.
         path = target[0].abspath
-        commands = [path] + [p for p in(x.replace('$', path).split() for x in extra_commands)]
+        commands = [path] + [p for p in (x.replace('$', path).split() for x in extra_commands)]
         for command in commands:
             _print("running %s\n" % command)
             try:
-                ps = subprocess.Popen(command,
+                ps = subprocess.Popen(
+                    command,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     shell=False,
                     cwd=__file__
                 )
-                #more hax to allow us to report where the test came from later
+                # more hax to allow us to report where the test came from later
                 ps.test_path = path
                 ps.target = target
                 ret = ps.wait()
                 if ret == 0:
                     successes.append(ps)
                 elif ret >= 125:
-                    #This is likely to be posix (or even bash)-specific
-                    #https://en.wikipedia.org/wiki/Exit_status
+                    # This is likely to be posix (or even bash)-specific
+                    # https://en.wikipedia.org/wiki/Exit_status
                     errors.append(ps)
                 else:
                     failures.append(ps)
@@ -134,8 +146,13 @@ def run_all_tests(env, sources_list, **kwargs):
         return 0
 
     file_extn = kwargs.pop('file_extn', '.c')
+
     for source in sources_list:
-        test = env.Program('test_' + str(source).rstrip(file_extn), [source], **kwargs)
+        test = env.Program(
+            'test_' + str(source).rstrip(file_extn),
+            [source],
+            **kwargs
+        )
         programs.append(test)
         env.AddPostAction(test,  _execute_test)
 
@@ -143,7 +160,7 @@ def run_all_tests(env, sources_list, **kwargs):
     # properly, we  must allow out-of-order builds.
     # We must register `_report_test_status` to depend on built tests, and it must
     # check if not all tests have been completed and exit immediately in that case.
-    # Because 'results.txt' is never created, this test always runs.
+    # Because the target is always unique and never exists, this test always runs.
     report_test_status = Command(uuid.uuid4().hex, programs, _report_test_status)
     Depends(report_test_status, programs)
 
@@ -163,13 +180,12 @@ if any(map(
         ),
         os.environ.keys()
 )):
-    extra_commands=[
+    extra_commands = [
         """valgrind --error-exitcode=1 --leak-check=full --num-callers=50 $"""
     ]
 
 # We don't want NDEBUG for the tests
 # replace the original construction environment
-
 env = env.Clone()
 env.Append(LIBS=['beemo', 'm'])
 env.Append(LIBPATH='../')
