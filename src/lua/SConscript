@@ -42,12 +42,13 @@ def build_sources_list(dirs, extn):
 def get_debug_source(sources):
     out = []
     strlen = 0
-    for source in sources:
+    for s in sources:
         # try:
         #     assert isinstance(source, six.string_types)
         # except AssertionError:
         #     raise TypeError("expected string")
 
+        source = str(s)
         with open(source) as f:
             # not adding newlines can cause syntax errors
             # in the concatenated result
