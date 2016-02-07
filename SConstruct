@@ -163,7 +163,7 @@ def configure_cpp_switches(env, config):
 SetOption('num_jobs', multiprocessing.cpu_count())
 AddOption('--disable', type='string')
 AddOption('--enable', type='string')
-env = Environment()
+env = Environment(env=os.environ)
 std_switches(env)
 if os.name == 'nt':
     # MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
