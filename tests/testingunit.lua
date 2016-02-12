@@ -4,7 +4,8 @@ TestingUnit = setmetatable({},
 {
     __call = function(self, ...)
         local test_table = {
-            --this table value should be considered immutable as it is used for table discovery
+            --[[this table value should be considered immutable as it is used
+            for table discovery]]
             is_testing_unit = true,
 
             fixtures = {},
@@ -19,7 +20,7 @@ TestingUnit = setmetatable({},
 
                 ]]
                 local args = args or {}
-                success, result = pcall(func, unpack(args))
+                local success, result = pcall(func, unpack(args))
                 --we don't want success as this is assert_raises()
                 if success then
                     self:_assertion_failure{
@@ -36,7 +37,9 @@ TestingUnit = setmetatable({},
                 if a ~= b then
                     self:_assertion_failure{
                         traceback=debug.traceback(2),
-                        err_str=string.format("assert_equal failed: %s ~= %s", a , b),
+                        err_str=string.format("assert_equal failed: %s ~= %s",
+                            a , b
+                        ),
                         debug_info=debug.getinfo(2),
                         args={a, b}
                     }
@@ -48,7 +51,10 @@ TestingUnit = setmetatable({},
                 if (math.abs(a) - math.abs(b))  > epsilon then
                         self:_assertion_failure{
                         traceback=debug.traceback(2),
-                        err_str=string.format("assert_almost equal failed: %s ~= %s +/-%s", a , b, epsilon),
+                        err_str=string.format(
+                            "assert_almost equal failed: %s ~= %s +/-%s",
+                            a , b, epsilon
+                        ),
                         debug_info=debug.getinfo(2),
                         args={a, b},
 
@@ -60,7 +66,10 @@ TestingUnit = setmetatable({},
                 if not x then
                     self:_assertion_failure{
                         traceback=debug.traceback(2),
-                        err_str=string.format("assert_truthy failed: '%s' is not truthy", x),
+                        err_str=string.format(
+                            "assert_truthy failed: '%s' is not truthy",
+                            x
+                        ),
                         debug_info=debug.getinfo(2),
 
                         args={x}
@@ -72,7 +81,10 @@ TestingUnit = setmetatable({},
                 if x ~= true then
                     self:_assertion_failure{
                         traceback=debug.traceback(2),
-                        err_str=string.format("assert_true failed:'%s' ~= true", x),
+                        err_str=string.format(
+                            "assert_true failed:'%s' ~= true",
+                            x
+                        ),
                         debug_info=debug.getinfo(2),
                         args={x}
                     }
@@ -89,7 +101,10 @@ TestingUnit = setmetatable({},
             assert_false = function(self, x)
                 if x ~= false then
                     self:_assertion_failure{
-                        err_str=string.format("assert_false failed: '%s' ~= false", x),
+                        err_str=string.format(
+                            "assert_false failed: '%s' ~= false",
+                            x
+                        ),
                         debug_info=debug.getinfo(2),
                         args={x}
                     }
@@ -99,7 +114,10 @@ TestingUnit = setmetatable({},
             assert_match = function(self, s, exp)
                 if not string.match(s, exp) then
                     self:_assertion_failure{
-                        err_str=string.format("'%s' does not match '%s'", s, exp),
+                        err_str=string.format(
+                            "'%s' does not match '%s'",
+                            s, exp
+                        ),
                         debug_info=debug.getinfo(2),
                         args={s, exp}
                     }
@@ -109,7 +127,10 @@ TestingUnit = setmetatable({},
             assert_in = function(self, haystack, needle)
                 if type(haystack) ~= 'string' and type(haystack) ~= 'table' then
                     self:_assertion_failure{
-                        err_str=string.format("type('%s') is not a container type",  haystack),
+                        err_str=string.format(
+                            "type('%s') is not a container type",
+                            haystack
+                        ),
                         debug_info=debug.getinfo(2),
                         args={needle=needle, haystack=haystack}
                     }
@@ -118,7 +139,10 @@ TestingUnit = setmetatable({},
                 if type(haystack) == 'string' then
                     if type(needle) ~= 'string' then
                         self:_assertion_failure{
-                            err_str=string.format("'%s' cannot be a substring of '%s'", tostring(needle), haystack),
+                            err_str=string.format(
+                                "'%s' cannot be a substring of '%s'",
+                                tostring(needle), haystack
+                            ),
                             debug_info=debug.getinfo(2),
                             args={needle=needle, haystack=haystack}
                         }
@@ -127,7 +151,10 @@ TestingUnit = setmetatable({},
                     local start, finish = string.find(haystack, needle)
                     if start == nil then
                         self:_assertion_failure{
-                            err_str=string.format("'%s' not found in '%s'", needle, haystack),
+                            err_str=string.format(
+                                "'%s' not found in '%s'",
+                                needle, haystack
+                            ),
                             debug_info=debug.getinfo(2),
                             args={needle=needle, haystack=haystack}
                         }
@@ -144,7 +171,10 @@ TestingUnit = setmetatable({},
                     if not in_table then
                         self:_assertion_failure{
                             traceback=debug.traceback(2),
-                            err_str=string.format("'%s' not found in '%s'", needle, haystack),
+                            err_str=string.format(
+                                "'%s' not found in '%s'",
+                                needle, haystack
+                            ),
                             debug_info=debug.getinfo(2),
                             args={needle=needle, haystack=haystack}
                         }
@@ -164,8 +194,15 @@ TestingUnit = setmetatable({},
             end,
 
             assert_calls = function(self, caller, callee, args)
-                if (type(caller) ~= 'function') or (type(callee) ~= 'function') then
-                    error(string.format('callable arguments required for assert_calls().  Got %s, %s, %s', caller, callee, args), 2)
+                if(type(caller)~='function') or (type(callee)~='function') then
+                    error(
+                        string.format(
+                            [[callable arguments required for assert_calls().
+                            'Got %s, %s, %s]],
+                            caller, callee, args
+                        ),
+                        2
+                    )
                 end
                 local was_called = false
                 local function trace_hook()
@@ -180,7 +217,10 @@ TestingUnit = setmetatable({},
                     if n.what == "C" then
                         return n.name
                     end
-                    local lc = string.format("[%s]:%d", n.short_src, n.linedefined)
+                    local lc = string.format("[%s]:%d",
+                        n.short_src,
+                        n.linedefined
+                    )
                     if n.what ~= "main" and n.namewhat ~= "" then
                         return string.format("%s, (%s)", lc, n.name)
                     else
@@ -198,7 +238,7 @@ TestingUnit = setmetatable({},
                     self:_assertion_failure{
                         traceback=debug.traceback(2),
                         err_str=string.format(
-                            "assert_calls failure:'%s' not called by '%s with args(%s)'",
+                            "assert_calls failure:'%s' not called by '%s' with args(%s)'",
                             getname(callee),
                             getname(caller),
                             table.concat(type(args) == 'table' and args or {args}, ', ')
@@ -217,6 +257,7 @@ TestingUnit = setmetatable({},
         end
         return test_table
     end,
+
      __tostring = function(self)
         local tests = {}
         for k, v in pairs(self) do
@@ -372,7 +413,7 @@ function runtests(all_test_files, show_tracebacks, silence_output)
                     return all_test_units
                 end
             else
-                report(string.format("ERROR:failed to load '%s'", file))
+                report(string.format("ERROR:failed to load '%s':\n\t%s", file, err))
                 n_test_errors = n_test_errors + 1
                 return {}
             end
@@ -412,8 +453,9 @@ function runtests(all_test_files, show_tracebacks, silence_output)
                     for _, fixture in ipairs(get_fixtures(t, func_name)) do
                     --[[
                         Expected failures are indicated by naming convention.
-                        rather than decorators or similar conventions used in other languges.
-                        The following member functions will be treated as expected failures:
+                        rather than decorators or similar conventions used in
+                        other langauges. The following member functions will be
+                        treated as expected failures:
                             test_myfunction_expected_fail'
                             'TestExpectedFailure'
                             'test_myfunctionExpected_failREALLYUGLY'
@@ -429,8 +471,9 @@ function runtests(all_test_files, show_tracebacks, silence_output)
                             '^test[%a%d_]*expected[%a%d_]*fail'
                         ) then
                             --[[The expected failure handling is a hack relying on
-                            the nonlocal variable ``last_assertion`` as semi-global state,
-                            but it significantly simplifies the assert_* functions
+                            the nonlocal variable ``last_assertion`` as
+                            semi-global state,but it significantly
+                            simplifies the assert_* functions
                             and that's a good thing.
                             ]]
                             is_expected_failure = true
@@ -459,7 +502,10 @@ function runtests(all_test_files, show_tracebacks, silence_output)
                             if not last_assertion then
                                 n_tests_failed = n_tests_failed + 1
                                 failures[#failures +1 ] = {
-                                    err_str=string.format("%s: did not fail as expected", func_name),
+                                    err_str=string.format(
+                                        "%s: did not fail as expected",
+                                        func_name
+                                    ),
                                     debug_info=debug.getinfo(callable),
                                     args=fixture,
                                     func_name=func_name
@@ -531,7 +577,9 @@ function runtests(all_test_files, show_tracebacks, silence_output)
             )
             report(string.rep("-", 70))
             report(f.err_str)
-            if show_tracebacks then report(string.format("Traceback:\n%s", f.traceback)) end
+            if show_tracebacks then
+                report(string.format("Traceback:\n%s", f.traceback))
+            end
             report()
         end
 
@@ -564,9 +612,10 @@ if arg then
     script_name = arg[0]:match("[.%w]*$")
 end
 if script_name == 'testingunit' or script_name == 'testingunit.lua'then
-    --[[`arg` is set by the lua repl: 'lua_setglobal(L, "arg");', not by the Lua VM,
+--[[
+    `arg` is set by the lua repl: 'lua_setglobal(L, "arg");', not by the Lua VM,
     so this will work in an embedded system that doesn't set `arg`. Fragile much?
-    ]]
+]]
     local test_dirs = #arg > 0 and {} or {'.', 'tests'}
     local depth = 1
     for _, v in ipairs(arg) do
