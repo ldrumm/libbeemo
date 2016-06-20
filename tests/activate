@@ -5,26 +5,34 @@ _linkervar() {
         echo "LD_LIBRARY_PATH"
     fi
 }
+#
+# required at top-level otherwise zsh reports the function name
+# instead of the script
+_ZSH_SOURCE="${0%/*}"
 
-_ZSH_SOURCE="${0%/*}" # required otherwise zsh reports the script name as the function
 _ldpath() {
     # Because this script is kept in a subdirectory of the main library, we
     # need to set the *LD_LIBRARY_PATH var to the parent directory.
     # However, getting the directory of a shell script being sourced is non-portable,
-    # and relies on stuff that Mac OS X (in particular) doesn't supply, as well
-    # stuff that only seems possible in zsh, bash, and ksh; this function is ugly on it's face.
+    # and relies on stuff that Mac OS X (in particular) doesn't supply, as well as
+    # stuff that only seems possible in zsh, bash, and ksh; this function is
+    # ugly on it's face.
 
     # https://unix.stackexchange.com/questions/96203/find-location-of-sourced-shell-script?lq=1
-    # has the history lesson
+    # has the history lesson.
+
     if [ -n "$BASH_SOURCE" ] ; then
         echo "$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )/";
         return 0;
     elif [ -n "$ZSH_VERSION" ] ; then
-        echo "$(python -c "import os, sys; print(os.path.dirname(os.path.realpath('$_ZSH_SOURCE/')))")";
+        # Mac OS X doesn't have realpath. Stupid. However, Python does
+        echo "$(python -c "from os.path import *;print(dirname(realpath('$_ZSH_SOURCE/')))")";
         return 0;
     fi
 
-    echo 1>&2 "Your shell is not currently supported. Please 'export $(_linkervar)=\"Path to project root' instead"
+    echo 1>&2 \
+        "Your shell is not currently supported. "\
+        "Please 'export $(_linkervar)='Path to project build dir' instead"
     return 1;
 }
 

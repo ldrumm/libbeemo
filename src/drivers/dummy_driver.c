@@ -1,34 +1,36 @@
 /*BMO_dummy_driver.c*/
 /** @module
-*   This driver backend implements a dummy callback interface that allows a live performance stream to be written to disk.
-*	requests to begin audio processsing using this dummy interface should not fail unless their is insufficient disk space available.
+*   This driver backend implements a dummy callback interface that allows a live
+*performance stream to be written to disk.
+*	requests to begin audio processsing using this dummy interface should not
+*fail unless their is insufficient disk space available.
 */
 
 #ifdef __linux__
 #undef _GNU_SOURCE
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <time.h>
-#include <stdint.h>
 #include <assert.h>
-#include <math.h>
 #include <errno.h>
-#include <stdio.h>
-#include <fcntl.h> 
+#include <fcntl.h>
+#include <math.h>
 #include <pthread.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
 
-#include "../definitions.h"
-#include "../multiplexers.h"
-#include "../buffer.h"
-#include "../memory/map.h"
-#include "../import_export.h"
-#include "../error.h"
 #include "../atomics.h"
+#include "../buffer.h"
+#include "../definitions.h"
+#include "../error.h"
+#include "../import_export.h"
+#include "../memory/map.h"
+#include "../multiplexers.h"
 #include "driver_utils.h"
 #include "ringbuffer.h"
 #if 0
-#define DUMMY_RT_SIG SIGRTMIN+1
+#define DUMMY_RT_SIG SIGRTMIN + 1
 #define DUMMY_DISK_BUFFERS 4
 
 enum {
@@ -508,17 +510,26 @@ void BMO_dummyStop(void * data)
 }
 
 
-#else //if 0
-#endif//__linux__
+#else  // if 0
+#endif //__linux__
 #endif
 #include "../definitions.h"
-BMO_state_t * 
-bmo_dummy_start(BMO_state_t * state, uint32_t channels, uint32_t rate, uint32_t buf_len, uint32_t flags, const char * path)
+BMO_state_t *bmo_dummy_start(
+    BMO_state_t *state,
+    uint32_t channels,
+    uint32_t rate,
+    uint32_t buf_len,
+    uint32_t flags,
+    const char *path
+)
 {
-    (void)path; (void)channels; (void)rate; (void)buf_len; (void)flags; (void)state;
+    (void)path;
+    (void)channels;
+    (void)rate;
+    (void)buf_len;
+    (void)flags;
+    (void)state;
     BMO_NOT_IMPLEMENTED;
     return NULL;
 }
-
-
 

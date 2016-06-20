@@ -1,3 +1,4 @@
+dsp = dsp or {}
 function dsp.time()
     --return the current time assumed by the dsp as tick start and tick end
     local tick = dsp.getdsptick(_dsp)
@@ -38,24 +39,24 @@ do
         end,
 
         current_events = function(self)
-            local start, fin = dsp.time()
+            local start, stop = dsp.time()
             local t = {}
-            for k, v in ipairs(self.events) do
-                if time.starts < start and time.ends < fin then
+            for i, ev in ipairs(self.events) do
+                if ev.time.starts < start and ev.time.stops < stop then
                     t[#t + 1] = v
-                elseif v.time.starts >= start and v.time.starts < fin then
+                elseif ev.time.starts >= start and ev.time.starts < stop then
                     print("adding event")
-                    t[#t + 1] = v
+                    t[#t + 1] = ev
                 end
             end
             return t
         end,
 
         clearexpired = function(self)
-            local start, fin = dsp.time()
-            for k, v in ipairs(self.events) do
-                if v.time.starts < start then
-                    if v.period > 0 then
+            local start, stop = dsp.time()
+            for i, ev in ipairs(self.events) do
+                if ev.time.starts < start then
+                    if ev.period > 0 then
 
                     end
                 end
@@ -64,10 +65,9 @@ do
 
         update = function(self)
             local events = self:current_events()
-            for k, v in pairs(events) do
-                    print("schedule.update" .. tostring(#events))
-                    for _k, _v in pairs(v) do print(_k, _v) end
-                v.fn()
+            for k, ev in ipairs(events) do
+                print("schedule.update" .. tostring(#events))
+                ev.fn()
             end
         end
     }

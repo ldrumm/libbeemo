@@ -1,4 +1,10 @@
 xml/
 build/
+share/
+lib/
+bin/
+include/
+local/
 doxygen_sqlite3.db
+pip-selfcheck.json
 !.gitignore

@@ -28,7 +28,7 @@ tests for the main library. Hopefully this encourages more sanity-checks.
 # This needs to be done on file import because execute_test() is called from a
 # different context with a different PWD.
 # This is due to scons building out-of-order (deferred)
-__file__ = os.getcwd()
+DIRNAME = os.getcwd()
 
 
 def _print(*args):
@@ -70,7 +70,7 @@ def run_all_tests(env, sources_list, **kwargs):
     for x in extra_commands:
         assert x.count("$") == 1
 
-    def _report_test_status(target, source, env):
+    def report_test_status(target, source, env):
         for test in failures:
             _print("=" * 80)
             _print("FAILURE: '%s'" % test.test_path)
@@ -100,20 +100,23 @@ def run_all_tests(env, sources_list, **kwargs):
                         len(failures),
                         failures and ": ('%s')" % "', '".join(
                             os.path.basename(test.test_path) for test in failures
-                            ) or '',
+                        ) or '',
                         len(errors),
                         errors and ": ('%s')" % "', '".join(
                             os.path.basename(test.test_path) for test in errors
-                    ) or '',
+                        ) or '',
                 ),
                 node=nodes,
             )
         return 0
 
-    def _execute_test(target, source, env):
+    def execute_test(target, source, env):
         # We want our tests run with a PWD of their source; hax.
         path = target[0].abspath
-        commands = [path] + [p for p in (x.replace('$', path).split() for x in extra_commands)]
+        commands = [path] + list(
+            x.replace('$', path).split()
+            for x in extra_commands
+        )
         for command in commands:
             _print("running %s\n" % command)
             try:
@@ -122,7 +125,7 @@ def run_all_tests(env, sources_list, **kwargs):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     shell=False,
-                    cwd=__file__
+                    cwd=DIRNAME
                 )
                 # more hax to allow us to report where the test came from later
                 ps.test_path = path
@@ -140,8 +143,8 @@ def run_all_tests(env, sources_list, **kwargs):
                 _print(e)
                 errors.append(ps)
             finally:
-            # Pretend to return success, whatever the real result.
-            # We defer failure notification to the end
+                # Pretend to return success, whatever the real result.
+                # We defer failure notification to the end
                 executed.append(ps)
         return 0
 
@@ -154,15 +157,14 @@ def run_all_tests(env, sources_list, **kwargs):
             **kwargs
         )
         programs.append(test)
-        env.AddPostAction(test,  _execute_test)
+        env.AddPostAction(test, execute_test)
 
     # this is a big hack: In order to allow the scons dependency resolver to work
     # properly, we  must allow out-of-order builds.
-    # We must register `_report_test_status` to depend on built tests, and it must
+    # We must register `report_test_status` to depend on built tests, and it must
     # check if not all tests have been completed and exit immediately in that case.
     # Because the target is always unique and never exists, this test always runs.
-    report_test_status = Command(uuid.uuid4().hex, programs, _report_test_status)
-    Depends(report_test_status, programs)
+    Depends(Command(uuid.uuid4().hex, programs, report_test_status), programs)
 
     return programs
 

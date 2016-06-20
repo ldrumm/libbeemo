@@ -77,6 +77,7 @@ Because of this, there are some basic requirements and limitations for the test-
         - ``FRAMES``: The number of frames per buffer.  This affects (among other things) input/output latency.
         - ``RATE``: The audio engine sample rate as an integer (Hz)
         - ``LOGLEVEL``: How chatty the library will be.  This defaults to ``BMO_MESSAGE_DEBUG`` as defined in ``src/error.h``.  Valid values in decreasing level of verbosity: ``(DEBUG|INFO|ERROR|NONE)``
+        - ``DRIVER``: The audio driver to use. ``(JACK|PORTAUDIO)``
 
 
         To get access to the above globals, simply ``#include "lib/test_common.c"`` and call ``bmo_test_setup()`` as the first line of your ``main()`` function.

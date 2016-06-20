@@ -1,20 +1,18 @@
-#include <sys/time.h>
 #include <stdio.h>
+#include <sys/time.h>
 
-struct timeval begin;
-struct timeval end;
-double secsa;
-double secsb;
+static struct timeval begin;
+static struct timeval end;
 
 void stopwatch_start(void)
 {
-	gettimeofday(&begin, NULL);
+    gettimeofday(&begin, NULL);
 }
 
 double stopwatch_stop(void)
 {
-	gettimeofday(&end, NULL);
-	secsa = (double)begin.tv_sec + ((double)begin.tv_usec / 1000000.0f);
-	secsb = (double)end.tv_sec + ((double)end.tv_usec / 1000000.0f);
-	return (secsb - secsa);
+    gettimeofday(&end, NULL);
+    double secs_a = (double)begin.tv_sec + ((double)begin.tv_usec / 1000000.);
+    double secs_b = (double)end.tv_sec + ((double)end.tv_usec / 1000000.);
+    return (secs_b - secs_a);
 }

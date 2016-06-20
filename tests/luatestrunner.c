@@ -33,7 +33,7 @@ int bmo_runtests(void * dsp_obj, char * test_file, const char * test_string, voi
     (void)test_state; // TODO define behaviour of extra parameters
     BMO_dsp_obj_t * dsp = dsp_obj;
     bmo_debug("%s\n", test_file);
-    BMO_lua_context_t * state = (BMO_lua_context_t *)dsp->handle;
+    BMO_lua_context_t *state = dsp->userdata;
     assert(state);
     int err = 0;
     if (test_file) {

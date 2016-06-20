@@ -25,7 +25,7 @@ callback-based (most are).
    -  In the same vein as above: Your callback must not wait on any locks or call functions that wait on a low-priority thread that may starve the audio buffer (priority inversion).
 
 #. In your callback you read the required number of frames from
-   state->ringbuffer and copy to the output. Audio date will be the machine float float, noninterleaved coming from the ringbuffer. If your driver produces/consumes another encoding/multiplex, use one of the converters from ``src/multiplexers.c``
+   state->ringbuffer and copy to the output. Audio data will be the machine float, noninterleaved coming from the ringbuffer. If your driver produces/consumes another encoding/multiplex, use one of the converters from ``src/multiplexers.c``
 
 #. Call ``bmo_driver_callback_done(state, status);`` before
    your callback returns, where ``status`` is one of ``BMO_DSP_RUNNING`, `BMO_DSP_STOPPED``.

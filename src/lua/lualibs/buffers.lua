@@ -1,5 +1,6 @@
+dsp = dsp or {}
 function dsp.new_buffer(template)
-    local buffer = template or error("template required to instantiate dsp buffer", 2)
+    local buffer = assert(template, "template required to instantiate dsp buffer", 2)
     local raw_dsp_obj = template.raw_dsp_obj
     local dsp_prototype = {
         rate = buffer.rate or 44100, --FIXME
@@ -7,8 +8,8 @@ function dsp.new_buffer(template)
             raw_dsp_obj,
             buffer.name
         ) or error('', 2),
-        channels = buffer.channels or dsp.getdspchannels(raw_dsp_obj) or error('', 2),
-        frames = buffer.frames or dsp.getdspframes(raw_dsp_obj) or error('', 2),
+        channels = assert(buffer.channels or dsp.getdspchannels(raw_dsp_obj)),
+        frames = assert(buffer.frames or dsp.getdspframes(raw_dsp_obj)),
         shallow_copy = function(self)
             local t = {}
             for k, v in pairs(self) do
@@ -129,6 +130,7 @@ function dsp.new_buffer(template)
     }
     return setmetatable(dsp_prototype, mt)
 end
+
 function dsp.temp_buf(channels, frames)
     frames = frames or error("frames parameter expected", 2)
     channels = channels or error("channels parameter expected", 2)
@@ -141,15 +143,18 @@ function dsp.temp_buf(channels, frames)
     mt.__gc = function(self) dsp.gctempbuf(self.buffer, self.channels) end
     return setmetatable(buf, mt)
 end
+
 function dsp.sys(name)
     name = name or "out"
     local _ = {output="out", input="in", control="ctl"}
     name = _[name] or name
     return dsp.new_buffer{raw_dsp_obj=_dsp, name=name}
 end
+
 function dsp.buf_from(t, ch, frames)
     --TODO
 end
+
 function dsp.open(path)
     local flags =  flags or "buffered"
     local buffer_obj_p, channels, rate = dsp._fopen(path)

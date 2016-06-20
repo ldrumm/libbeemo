@@ -12,52 +12,60 @@
 #include "lib/test_common.c"
 #include "lib/compiler.c"
 
+static char *inpath = NULL;
+
+void cleanup(void)
+{
+    if (inpath)
+        remove(inpath);
+}
+
 int main(void)
 {
+    atexit(cleanup);
     bmo_test_setup();
     const char * const plugin_source = "./lib/invert_plugin.c";
     int err = 0;
-    size_t len = bmo_fsize(plugin_source, &err);
+    const size_t len = bmo_fsize(plugin_source, &err);
     assert(!err);
-    char * input = bmo_map(plugin_source, 0, 0);
-    char * source = calloc(len + 1, sizeof(char));
+    char *input = bmo_map(plugin_source, 0, 0);
+    char *source = calloc(len + 1, sizeof(char));
     assert(source);
     memcpy(source, input, len);
     bmo_unmap(input, len);
-    char * inpath = compile_string(source, "-fPIC -shared -g", "so");
+    inpath = compile_string(source, "-fPIC -shared -g", "so");
     assert(inpath);
 
-    BMO_dsp_obj_t * plugin = bmo_dsp_ladspa_new(
+    BMO_dsp_obj_t *plugin = bmo_dsp_ladspa_new(
         inpath,
         0,
         CHANNELS,
         FRAMES,
         RATE
     );
-    if(!plugin){
+    if (!plugin) {
         bmo_err("couldn't load '%s'\n", inpath);
         exit(EXIT_FAILURE);
     }
     plugin->_init(plugin, 0);
-    for(uint32_t ch = 0; ch < CHANNELS; ch++){
-        for(size_t i = 0; i < FRAMES; i++){
+    for (uint32_t ch = 0; ch < CHANNELS; ch++) {
+        for (size_t i = 0; i < FRAMES; i++) {
             plugin->in_buffers[ch][i] = sinf((float)i);
         }
     }
     plugin->_update(plugin, FRAMES);
-    //The plugin is supposed to invert, and not alter the output signal in any other way
-    for(uint32_t ch = 0; ch < CHANNELS; ch++){
-        for(size_t i = 0; i < FRAMES; i++){
+    // The plugin is supposed to invert, and not alter the output signal in any
+    // other way
+    for (uint32_t ch = 0; ch < CHANNELS; ch++) {
+        for (size_t i = 0; i < FRAMES; i++) {
             assert_fequal(plugin->out_buffers[ch][i], -sinf((float)i));
         }
     }
     plugin->_close(plugin, 0);
     bmo_dsp_close(plugin);
 
-    remove(inpath);
     free(plugin);
     free(source);
-    free(inpath);
     return 0;
 }
 #else

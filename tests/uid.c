@@ -24,18 +24,10 @@
 
 int nproc(void)
 {
-
     #ifdef __linux__
-    char buf[1024];
-    ssize_t nread;
-    FILE * fd = popen("nproc", "r");
-
-    nread = read(fileno(fd), buf, 1024);
-    pclose(fd);
-    if( nread < 1){
-        return nread;
-    }
-    return atoi(buf);
+    int nproc = sysconf(_SC_NPROCESSORS_ONLN);
+    assert(nproc > 0);
+    return nproc;
     #elif _WIN32
     SYSTEM_INFO info;
     GetSystemInfo(&info);
@@ -57,15 +49,15 @@ void * bmo_uid_ntimes(void * arg)
 void spawn_test_threads(int count, void * arg)
 {
     pthread_t workers[MAX_THREADS];
-    for(int t = 0; t < count; t++)
+    for (int t = 0; t < count; t++)
         pthread_create(&workers[t], NULL, bmo_uid_ntimes, arg);
-    for(int t = 0; t < count; t++)
+    for (int t = 0; t < count; t++)
         pthread_join(workers[t], NULL);
 }
 
 int main(void)
 {
-    /*This tests that bmo_uid properly provides unique values across multiple
+    /* This tests that bmo_uid properly provides unique values across multiple
     threads.
     We can't force a race condition but we can try to run as many hardware
     threads as available over billions of calls which would _likely_ fail
@@ -74,13 +66,18 @@ int main(void)
     thread will never cause a race.
     */
     int nthreads = nproc();
-    if(getenv("TRAVIS") || getenv("JENKINS_HOME")){
-        nthreads = MIN(4, nthreads); //CI builds time out because there are more physical processor in the host than the guest
+    if (getenv("TRAVIS") || getenv("JENKINS_HOME")) {
+    // CI builds time out because there are more physical processor in the host
+    // than the guest
+        nthreads = MIN(4, nthreads);
     }
-    uint64_t iter = 1000000;
+    uint64_t iter = 10000000;
     int i = 0;
-    if(nthreads == 1){
-        fprintf(stderr, "only one hardware thread available. Bugs will be masked\n");
+    if (nthreads == 1) {
+        fprintf(
+            stderr,
+            "WARNING only one hardware thread available for multithreaded test"
+        );
     }
     assert(nthreads < MAX_THREADS);
     printf("running bmo_uid() over %d threads\n", nthreads);

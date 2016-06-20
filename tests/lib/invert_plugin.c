@@ -9,9 +9,9 @@
 #define OUTPUT 2
 
 typedef struct {
-  LADSPA_Data * invert_toggle;
-  LADSPA_Data * input;
-  LADSPA_Data * output;
+    LADSPA_Data * invert_toggle;
+    LADSPA_Data * input;
+    LADSPA_Data * output;
 } Inverter;
 
 LADSPA_Handle instantiate(const LADSPA_Descriptor * ld, unsigned long rate)
@@ -24,7 +24,7 @@ LADSPA_Handle instantiate(const LADSPA_Descriptor * ld, unsigned long rate)
 void connect_port(LADSPA_Handle lh, unsigned long port, LADSPA_Data * data)
 {
     Inverter * inverter = (Inverter *)lh;
-    switch(port){
+    switch (port) {
         case CONTROL:
             inverter->invert_toggle = data;
             break;
@@ -34,23 +34,23 @@ void connect_port(LADSPA_Handle lh, unsigned long port, LADSPA_Data * data)
         case OUTPUT:
             inverter->output = data;
             break;
+        default: assert(0);
     }
 }
 
-void
-run(LADSPA_Handle lh, unsigned long frames)
+void run(LADSPA_Handle lh, unsigned long frames)
 {
     Inverter * inverter = (Inverter *)lh;
     unsigned long i;
-    if((*inverter->invert_toggle) > 0.){
-        for(i = 0; i < frames; i ++){
+    if ((*inverter->invert_toggle) > 0.) {
+        for (i = 0; i < frames; i++) {
             inverter->output[i] = -inverter->input[i];
         }
     }
     return;
 }
 
-const char * portnames[] = {"Invert", "Audio In", "Audio Out"};
+static const char * portnames[] = {"Invert", "Audio In", "Audio Out"};
 static const LADSPA_PortDescriptor pd[3] = {
     LADSPA_PORT_INPUT | LADSPA_PORT_CONTROL,
     LADSPA_PORT_INPUT | LADSPA_PORT_AUDIO,
@@ -58,13 +58,13 @@ static const LADSPA_PortDescriptor pd[3] = {
 };
 
 static const LADSPA_PortRangeHint prh[3] = {
-    {(LADSPA_HINT_TOGGLED| LADSPA_HINT_DEFAULT_1), 0, 1},
+    {(LADSPA_HINT_TOGGLED | LADSPA_HINT_DEFAULT_1), 0, 1},
     {0, 0, 0},
     {0, 0, 0}
 };
 
 static LADSPA_Descriptor ld = {
-    .UniqueID = 257,    //IDs < 1000 are for dev. only
+    .UniqueID = 257, // IDs < 1000 are for dev. only
     .Label = "bmo_test_inverter",
     .Properties = LADSPA_PROPERTY_HARD_RT_CAPABLE,
     .Name = "Beemo Test Suite LADSPA plugin",
@@ -84,10 +84,9 @@ static LADSPA_Descriptor ld = {
     .cleanup = free,
 };
 
-const LADSPA_Descriptor *
-ladspa_descriptor(unsigned long index)
+const LADSPA_Descriptor * ladspa_descriptor(unsigned long index)
 {
-    if(index)
+    if (index)
         return NULL;
     return &ld;
 }

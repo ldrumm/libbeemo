@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include "../../src/definitions.h"
-#include "../../src/deleteme_sched.h"
+#include "../../src/sched.h"
 #include "../../src/drivers/drivers.h"
 #include "../../src/drivers/driver_utils.h"
 #include "../../src/error.h"
@@ -16,16 +16,16 @@
 int main(int argc, char ** argv)
 {
     bmo_test_setup();
-    if(argc < 2){
+    if (argc < 2) {
         bmo_err("missing required argument (path to audiofile)\n");
         exit(EXIT_FAILURE);
     }
-    const char * path = argv[1];
+    const char *path = argv[1];
 
-    BMO_state_t * state = bmo_new_state();
+    BMO_state_t *state = bmo_new_state();
     state->ringbuffer = bmo_init_rb(FRAMES, CHANNELS);
-    BMO_dsp_obj_t * file = bmo_dsp_bo_new_fopen(path, BMO_BUFFERED_DATA, FRAMES);
-    BMO_dsp_obj_t * rb = bmo_dsp_rb_new(
+    BMO_dsp_obj_t *file = bmo_dsp_bo_new_fopen(path, BMO_BUFFERED_DATA, FRAMES);
+    BMO_dsp_obj_t *rb = bmo_dsp_rb_new(
         state->ringbuffer,
         BMO_DSP_TYPE_OUTPUT,
         CHANNELS,

@@ -4,8 +4,9 @@ import sys
 import os
 import multiprocessing
 
-from SCons.Errors import BuildError
+LIB_VERSION = (0, 0, 1)
 
+from SCons.Errors import BuildError
 
 def _print(*args):
     if GetOption('silent'):
@@ -15,9 +16,15 @@ def _print(*args):
 
 class ArgOpts(object):
     def __init__(self, env, enable, disable):
-        self.enable = enable and enable.split(',') or list()
-        self.disable = disable and disable.split(',') or list()
         self.env = env
+        self.enable = set([] if not enable else enable.split(','))
+        self.disable = set([] if not disable else disable.split(','))
+        intersection = self.enable.intersection(self.disable)
+        if intersection:
+            raise BuildError(
+                errstr="Mutually exclusive options: "
+                "enable/disable %s" % ','.join(intersection)
+            )
 
     def enable_release(self):
         self.env.Append(CCFLAGS=['-O2', '-mtune=native', '-ffast-math'])
@@ -37,15 +44,24 @@ class ArgOpts(object):
         self.env.Append(LDFLAGS=['-pg'])
         self.env.Append(LINKFLAGS=['-pg'])
 
+    def enable_lto(self):
+        self.env.Append(CCFLAGS=['-flto'])
+        self.env.Append(LINKFLAGS=['-flto'])
+
     def enable_asan(self):
         _print("enabling adress sanitizer")
         asan_symbolizer = os.environ.get('ASAN_SYMBOLIZER_PATH')
         if asan_symbolizer:
             self.env["ENV"].update(ASAN_SYMBOLIZER_PATH=asan_symbolizer)
 
-        env.Append(LDFLAGS=['-fsanitize=address'])
-        env.Append(CCFLAGS=['-fsanitize=address'])
-        env.Append(LIBS=['asan'])
+        self.env.Append(LDFLAGS=['-fsanitize=address'])
+        self.env.Append(CCFLAGS=['-fsanitize=address'])
+        self.env.Append(LIBS=['asan'])
+
+    def enable_ubsan(self):
+        self.env.Append(CCFLAGS=['-fsanitize=undefined'])
+        self.env.Append(LDFLAGS=['-fsanitize=undefined'])
+        self.env.Append(LIBS=['ubsan'])
 
     def enable_analyse(self):
         """
@@ -66,7 +82,7 @@ class ArgOpts(object):
 
 
 def std_switches(env):
-    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-Werror', '-g3'])
+    env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-g3'])
     # enable color output from tools.
     env['ENV']['TERM'] = os.environ['TERM']
     env["CC"] = os.getenv("CC", env["CC"])
@@ -163,9 +179,11 @@ def configure_cpp_switches(env, config):
 SetOption('num_jobs', multiprocessing.cpu_count())
 AddOption('--disable', type='string')
 AddOption('--enable', type='string')
+VariantDir('build', 'src', duplicate=0)
 env = Environment(ENV=os.environ)
 std_switches(env)
-if os.name == 'nt':
+
+if sys.platform.startswith('win32'):
     # MSVC is the SCons default on windows but MSVC with anything approaching c99 won't work.
     env = Environment(ENV=os.environ, tools=['mingw'])
     std_switches(env)
@@ -174,17 +192,20 @@ if os.name == 'nt':
 
 ############ Sources #############
 env.Append(source=[
-    Glob('src/*.c'),
-    Glob('src/drivers/*.c'),
-    Glob('src/dsp/*.c'),
-    Glob('src/lua/*.c'),
-    Glob('src/memory/*.c'),
+    Glob('build/*.c'),
+    Glob('build/drivers/*.c'),
+    Glob('build/dsp/*.c'),
+    Glob('build/lua/*.c'),
+    Glob('build/memory/*.c'),
 ])
 
 
 ############ Targets #############
-beemo = env.SharedLibrary('beemo', env['source'])
-static = env.Library('beemo', env['source'])
+beemo = env.SharedLibrary(
+    'beemo',
+    env['source'],
+    SHLIBVERSION='%s.%s.%s' % LIB_VERSION
+)
 
 if not env.GetOption('clean'):
     # Only parse options during a real build because cleans should be fast
@@ -200,8 +221,10 @@ lualibs = env.SConscript('src/lua/SConscript', 'env')
 # Maybe run some tests
 tests = env.SConscript('tests/SConscript', 'env')
 # Possibly build a native installer
-pkg = env.SConscript("pkg/SConscript", 'env')
+pkg = env.SConscript('pkg/SConscript', 'env')
 
 env.Depends(tests, beemo)
 Default(beemo)
+
+static = env.Library('beemo', env['source'])
 Default(static)

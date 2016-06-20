@@ -8,14 +8,15 @@
 #include "../src/dsp_obj.h"
 
 #include "lib/test_common.c"
-#define FREQ 200
+
 
 int main(void)
 {
-    /**
-        We build a simple graph of dependent objects, and populate the head's input buffers with data.
-        After calling bmo_update_dsp_tree() on the bottom of the graph, we expect to
-        see that data mixed into the bottom dsp object's output buffers.
+/**
+    We build a simple graph of dependent objects, and populate the head's
+    input buffers with data.
+    After calling bmo_update_dsp_tree() on the bottom of the graph, we expect
+    to see that data mixed into the bottom dsp object's output buffers.
 
 dsp_top_a       dsp_top_b
     |               |
@@ -23,21 +24,22 @@ dsp_top_a       dsp_top_b
            |  |
         dsp_middle
             |
-        dsp_bottom <-after updating the graph's dependencies, we should see the mixed values from dsp_top_a and dsp_top_b
+        dsp_bottom <-after updating the graph's dependencies, we should see the
+        mixed values from dsp_top_a and dsp_top_b
 
-    */
+*/
     bmo_test_setup();
     float * test_buf_a = malloc(FRAMES * sizeof(float));
     assert(test_buf_a);
     float * test_buf_b = malloc(FRAMES * sizeof(float));
     assert(test_buf_b);
 
-    for(size_t i=0; i < FRAMES;i++){
+    for (size_t i = 0; i < FRAMES; i++) {
         test_buf_a[i] = (float)(rand() % RAND_MAX) / (float)RAND_MAX;
         test_buf_b[i] = (float)(rand() % RAND_MAX) / (float)RAND_MAX;
     }
 
-    BMO_dsp_obj_t * dsp_top_a, * dsp_top_b,*dsp_middle, *dsp_bottom;
+    BMO_dsp_obj_t *dsp_top_a, *dsp_top_b, *dsp_middle, *dsp_bottom;
 
     dsp_top_a = bmo_dsp_new(0, CHANNELS, FRAMES, RATE);
     dsp_top_b = bmo_dsp_new(0, CHANNELS, FRAMES, RATE);
@@ -53,18 +55,21 @@ dsp_top_a       dsp_top_b
 
     bmo_update_dsp_tree(dsp_bottom, 1, 0);
 
-    for(size_t i=0; i < FRAMES;i++)
+    for (size_t i = 0; i < FRAMES; i++)
         assert_fequal(dsp_bottom->out_buffers[0][i], test_buf_a[i] + test_buf_b[i]);
 
     free(test_buf_a);
     free(test_buf_b);
+
     bmo_dsp_close(dsp_top_a);
     bmo_dsp_close(dsp_top_b);
     bmo_dsp_close(dsp_middle);
     bmo_dsp_close(dsp_bottom);
+
     free(dsp_top_a);
     free(dsp_top_b);
     free(dsp_middle);
     free(dsp_bottom);
+
     return 0;
 }

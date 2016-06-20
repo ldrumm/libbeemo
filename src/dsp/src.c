@@ -1,12 +1,13 @@
-#include <stdlib.h>
 #include <assert.h>
-#include <stdio.h>
 #include <math.h>
-#include "src.h"
-#include "simple.h"
-#include "lpf.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "../definitions.h"
 #include "../error.h"
+#include "src.h"
+#include "lpf.h"
+#include "simple.h"
 
 void bmo_src_sb(float * out, float * in, float rate_in, float rate_out, uint32_t flags, size_t samples_in)
 {

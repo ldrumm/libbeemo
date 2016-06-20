@@ -6,7 +6,7 @@ a.out
 *.exe
 *.gch
 *.pch
-*.so
+*.so*
 *.dll
 
 #build / scons directories#
