@@ -85,8 +85,8 @@ int run_compiler(const char *target_path, const char *source_path,
     assert(source_path);
     assert(target_path);
     char cc_command[MAX_BUF];
-    char source[MAX_BUF];
-    char target[MAX_BUF];
+    char source[MAX_BUF] = {'\0'};
+    char target[MAX_BUF] = {'\0'};
     size_t source_len = shell_escape(source, source_path, MAX_BUF, &err);
     if (err)
         return -1;
