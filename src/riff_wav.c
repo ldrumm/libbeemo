@@ -319,7 +319,7 @@ BMO_buffer_obj_t * bmo_fopen_wav(const char * path, uint32_t flags)
 				switch(header.bits_per_sample)
 				{
 					case 32:flags |= BMO_FMT_FLOAT_32_BE; break;
-					case 64:flags |= BMO_FMT_FLOAT_64BE; break;	
+					case 64:flags |= BMO_FMT_FLOAT_64_BE; break;
 					default: return NULL;
 				}
 			else

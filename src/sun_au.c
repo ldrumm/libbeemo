@@ -22,7 +22,7 @@
      BMO_FMT_PCM_24_BE | \
      BMO_FMT_PCM_32_BE | \
      BMO_FMT_FLOAT_32_BE | \
-     BMO_FMT_FLOAT_64BE \
+     BMO_FMT_FLOAT_64_BE \
 )
 
 #define _swap32(i)\
@@ -193,31 +193,25 @@ BMO_buffer_obj_t *bmo_fopen_sun(const char *path, uint32_t flags)
     }
 
     /*test the data encoding of the file, and configure the conversion */
+    #define PCM_FMT(BITS) \
+        ((file_le == 0 ? BMO_FMT_PCM_##BITS##_BE : BMO_FMT_PCM_##BITS##_LE))
+    #define FLOAT_FMT(BITS) \
+        ((file_le == 0 ? BMO_FMT_FLOAT_##BITS##_BE : BMO_FMT_FLOAT_##BITS##_LE))
     switch (header.au_data_encoding) {
-    case AU_FORMAT_8_BIT_PCM: flags |= BMO_FMT_PCM_8; break;
-    case AU_FORMAT_16_BIT_PCM:
-        flags |= ((file_le == 0) ? BMO_FMT_PCM_16_BE : BMO_FMT_PCM_16_LE);
-        break;
-    case AU_FORMAT_24_BIT_PCM:
-        flags |= ((file_le == 0) ? BMO_FMT_PCM_24_BE : BMO_FMT_PCM_24_LE);
-        break;
-    case AU_FORMAT_32_BIT_PCM:
-        flags |= ((file_le == 0) ? BMO_FMT_PCM_32_BE : BMO_FMT_PCM_32_LE);
-        break;
-    case AU_FORMAT_32_BIT_FLOAT:
-        flags |= ((file_le == 0) ? BMO_FMT_FLOAT_32_BE : BMO_FMT_FLOAT_32_LE);
-        break;
-    case AU_FORMAT_64_BIT_FLOAT:
-        flags |= ((file_le == 0) ? BMO_FMT_FLOAT_64BE : BMO_FMT_FLOAT_64_LE);
-        break;
-    default: {
-        bmo_err(
-            "au encoding of type %d not supported\n",
-            header.au_data_encoding
-        );
-        goto fail;
+        case AU_FORMAT_8_BIT_PCM: flags |= BMO_FMT_PCM_8; break;
+        case AU_FORMAT_16_BIT_PCM: flags |= PCM_FMT(16); break;
+        case AU_FORMAT_24_BIT_PCM: flags |= PCM_FMT(24); break;
+        case AU_FORMAT_32_BIT_PCM: flags |= PCM_FMT(32); break;
+        case AU_FORMAT_32_BIT_FLOAT: flags |= FLOAT_FMT(32); break;
+        case AU_FORMAT_64_BIT_FLOAT: flags |= FLOAT_FMT(64); break;
+        default: {
+            bmo_err("au encoding of type %d not supported\n",
+                    header.au_data_encoding);
+            goto fail;
+        }
     }
-    }
+#undef PCM_FMT
+#undef FLOAT_FMT
 
     return bmo_bo_new(
         flags,
@@ -287,7 +281,7 @@ int bmo_fwrite_header_sun(
         case BMO_FMT_PCM_24_BE: enc = AU_FORMAT_24_BIT_PCM; break;
         case BMO_FMT_PCM_32_BE: enc = AU_FORMAT_32_BIT_PCM; break;
         case BMO_FMT_FLOAT_32_BE: enc = AU_FORMAT_32_BIT_FLOAT; break;
-        case BMO_FMT_FLOAT_64BE: enc = AU_FORMAT_64_BIT_FLOAT; break;
+        case BMO_FMT_FLOAT_64_BE: enc = AU_FORMAT_64_BIT_FLOAT; break;
         default: {
             bmo_err("Unsupported Sun/AU format type:%x\n", encoding);
             assert(0);

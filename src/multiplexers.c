@@ -215,7 +215,7 @@ uint32_t bmo_fmt_enc(uint32_t flags)
         BMO_FMT_PCM_24_BE	|
         BMO_FMT_PCM_32_BE	|
         BMO_FMT_FLOAT_32_BE	|
-        BMO_FMT_FLOAT_64BE	|
+        BMO_FMT_FLOAT_64_BE	|
 //        BMO_FMT_SNDFILE     |
         BMO_FMT_NATIVE_FLOAT
     );
@@ -236,7 +236,7 @@ uint32_t bmo_fmt_stride(uint32_t flags)
         case BMO_FMT_PCM_24_BE: return 3;
         case BMO_FMT_PCM_32_BE:return 4;
 		case BMO_FMT_FLOAT_32_BE:return 4;
-		case BMO_FMT_FLOAT_64BE:return 8;
+		case BMO_FMT_FLOAT_64_BE:return 8;
 		case BMO_FMT_NATIVE_FLOAT: return sizeof(float);
         // libsndfile interface only uses native floats
 //        case BMO_FMT_SNDFILE: return sizeof (float);
@@ -261,7 +261,7 @@ int bmo_fmt_pcm(uint32_t flags)
         case BMO_FMT_PCM_24_BE: return 1;
         case BMO_FMT_PCM_32_BE: return 1;
         case BMO_FMT_FLOAT_32_BE: return 0;
-        case BMO_FMT_FLOAT_64BE: return 0;
+        case BMO_FMT_FLOAT_64_BE: return 0;
         // sndfile interfaces only use libsndfile's float routines
 //        case BMO_FMT_SNDFILE: return 0;
         default: return 0;
@@ -284,7 +284,7 @@ uint32_t bmo_fmt_end(uint32_t flags)
         case BMO_FMT_PCM_24_BE: return ENDIAN_BIG;
         case BMO_FMT_PCM_32_BE: return ENDIAN_BIG;
         case BMO_FMT_FLOAT_32_BE: return ENDIAN_BIG;
-        case BMO_FMT_FLOAT_64BE: return ENDIAN_BIG;
+        case BMO_FMT_FLOAT_64_BE: return ENDIAN_BIG;
         case BMO_FMT_NATIVE_FLOAT: return bmo_host_endianness();
         default: return 0x0;
     }

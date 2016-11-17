@@ -117,7 +117,7 @@ typedef uint32_t vec4u __attribute__((vector_size(16)));
 /// 32-bit IEEE floating point
 #define BMO_FMT_FLOAT_32_BE     (0x00000400)
 /// 64-bit IEEE floating point
-#define BMO_FMT_FLOAT_64BE      (0x00000800)
+#define BMO_FMT_FLOAT_64_BE     (0x00000800)
 
 #define BMO_BUFFERED_DATA       (0x00001000)
 #define BMO_MAPPED_FILE_DATA    (0x00002000)
