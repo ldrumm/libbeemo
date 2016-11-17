@@ -72,21 +72,21 @@ void bmo_dither_sb(float *buffer, uint32_t resolution)
 // amplitude, uint32_t rate, uint32_t samples)
 //{
 //    bmo_info("%fHz\n", freq);
-//	//fast sine generator: adapted from musicdsp.org posted by Niels Gorisse
+//    //fast sine generator: adapted from musicdsp.org posted by Niels Gorisse
 //based on work by Julius O Smith
-//	float y2, y0, y1, w;
-//	w = freq * 2.0 * M_PI / rate;
-//	float b1 = 2.0 * cos(w);
+//    float y2, y0, y1, w;
+//    w = freq * 2.0 * M_PI / rate;
+//    float b1 = 2.0 * cos(w);
 //
-//	y1 = sin(phase - w);
-//	y2 = sin(phase - 2.0 * w);
+//    y1 = sin(phase - w);
+//    y2 = sin(phase - 2.0 * w);
 //    bmo_debug("phase:%f\n", phase);
-//	for (size_t f = 0; f < samples ; f++){
-//		y0 = b1 * y1 - y2;
-//		y2 = y1;
-//		y1 = y0;
-//		buffer[f] += y0 * amplitude;
-//	}
+//    for (size_t f = 0; f < samples ; f++){
+//        y0 = b1 * y1 - y2;
+//        y2 = y1;
+//        y1 = y0;
+//        buffer[f] += y0 * amplitude;
+//    }
 //}
 
 
@@ -189,10 +189,10 @@ void bmo_gain_sb(float *buffer, uint32_t samples, float gain_db)
     vec4f gain_vec = {gain, gain, gain, gain};
     if (samples % 4 == 0) {
         samples /= 4;
-        /*		gain_vec[0] = gain;*/
-        /*		gain_vec[1] = gain;*/
-        /*		gain_vec[2] = gain;*/
-        /*		gain_vec[3] = gain;*/
+        /* gain_vec[0] = gain;*/
+        /* gain_vec[1] = gain;*/
+        /* gain_vec[2] = gain;*/
+        /* gain_vec[3] = gain;*/
         while (samples--)
             vec_buf[samples] *= gain_vec;
     } else {
@@ -306,19 +306,19 @@ void bmo_lerp_sb(float *out, float *in, float ratio, size_t out_frames)
         be calculated once - i.e. the constant time between two samples.
         \f$b_2 = a_2*(b_1/a_1)\f$
         \verbatim
-            prev		next
-            |           |
-            |			V
-            |			/
-            |		  /	|
-            |		/  	|
-            |	  /|	|
-            |	/  |b2 	|b1
-            V /	   |   _|
-            /______|__|_|
+            prev       next
+            |            |
+            |            V
+            |           /|
+            |         /  |
+            |       /    |
+            |     /|     |
+            |   /  |b2   |b1
+            V /    |     |
+            /______|_____|___|
 
             |<-a2->|
-            |<-	  a1  ->|
+            |<-    a1  ->|
         \endverbatim
     */
     size_t out_idx = 0;
@@ -333,7 +333,7 @@ void bmo_lerp_sb(float *out, float *in, float ratio, size_t out_frames)
         prev = in[lrintf(f_idx)];
         next = in[lrintf(f_idx + 1)];
         a2 = f_idx - floorf(f_idx); /// ca length of a2
-        b1 = next - prev;           ///	find the height (b1) of triangle
+        b1 = next - prev;           ///    find the height (b1) of triangle
         b2 = a2 * (b1 * inv_a1);    ///
         out[out_idx] = prev + (a1 * b2);
         out_idx++;

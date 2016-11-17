@@ -410,7 +410,7 @@ static const struct luaL_Reg dsp_builtins[] = {
     {"mix_buffers", _bmo_mix_sbLua},
     {"invert_buffer", _bmo_inv_sbLua},
     {"copy_buffer", _bmo_sbcpyLua},
-    /*	{"copy_buffer_off", _bmo_sbcpyOffsetLua},*/
+    // {"copy_buffer_off", _bmo_sbcpyOffsetLua},
     {"osc_sine", _bmo_osc_sine_mix_sbLua},
     {"osc_square", _bmo_osc_sq_mix_sbLua},
     {"osc_saw", _bmo_osc_saw_sbLua},

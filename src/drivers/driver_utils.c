@@ -26,7 +26,7 @@ BMO_state_t *bmo_new_state(void)
     state->buffer_size = BMO_DEFAULT_BUF;
     state->dsp_load = 0.0;
     state->ringbuffer = NULL;
-    //		.driver = {{0}}
+    // .driver = {{0}}
     return state;
 }
 
@@ -68,23 +68,23 @@ uint32_t bmo_driver_ver(BMO_state_t * state)
             // jack does not seem to have a way to query the server version
             return 0;
         case BMO_PORTAUDIO_DRIVER:
-		#ifdef BMO_HAVE_PORTAUDIO
-			return (uint32_t)Pa_GetVersion();
-		#else
-			return 0;
-		#endif
+        #ifdef BMO_HAVE_PORTAUDIO
+            return (uint32_t)Pa_GetVersion();
+        #else
+            return 0;
+        #endif
         default: return 0;
     }
 }
 
 uint32_t bmo_bufsize(BMO_state_t * state)
 {
-	return state->buffer_size;
+    return state->buffer_size;
 }
 
 void bmo_start(BMO_state_t * state)
 {
-	uint32_t status = state->dsp_flags;
+    uint32_t status = state->dsp_flags;
     if (status & BMO_DSP_STOPPED) {
         status = status ^ BMO_DSP_STOPPED; // mask out the 'stopped' bits
         status |= BMO_DSP_RUNNING;

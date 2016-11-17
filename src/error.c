@@ -19,9 +19,9 @@ static void (*err_fn)(
 
 void bmo_verbosity(uint32_t level)
 {
-	if (level > BMO_MESSAGE_DEBUG)
-		level = BMO_MESSAGE_DEBUG;
-	debug_level = level;
+    if (level > BMO_MESSAGE_DEBUG)
+        level = BMO_MESSAGE_DEBUG;
+    debug_level = level;
 }
 
 /**

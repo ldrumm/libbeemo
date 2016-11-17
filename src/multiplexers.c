@@ -80,7 +80,7 @@ int bmo_host_be(void)
 
 int bmo_host_le(void)
 {
-	return(bmo_host_endianness() == ENDIAN_LITTLE ? 1 : 0);
+    return(bmo_host_endianness() == ENDIAN_LITTLE ? 1 : 0);
 }
 
 
@@ -131,20 +131,20 @@ void _bmo_swap_64(void *data)
     uint8_t *cp = data;
     union {
         uint64_t word;
-		uint8_t bytes[8];
-	}temp;
+        uint8_t bytes[8];
+    } temp;
 
-	temp.bytes[0] = cp[7];
-	temp.bytes[1] = cp[6];
-	temp.bytes[2] = cp[5];
-	temp.bytes[3] = cp[4];
-	temp.bytes[4] = cp[3];
-	temp.bytes[5] = cp[2];
-	temp.bytes[6] = cp[1];
-	temp.bytes[7] = cp[0];
+    temp.bytes[0] = cp[7];
+    temp.bytes[1] = cp[6];
+    temp.bytes[2] = cp[5];
+    temp.bytes[3] = cp[4];
+    temp.bytes[4] = cp[3];
+    temp.bytes[5] = cp[2];
+    temp.bytes[6] = cp[1];
+    temp.bytes[7] = cp[0];
 
-	*((uint64_t *)data) = temp.word;
-	return;
+    *((uint64_t *)data) = temp.word;
+    return;
 }
 
 
@@ -203,20 +203,19 @@ void _bmo_swap_ib(void *data, uint32_t stride, size_t len)
 
 uint32_t bmo_fmt_enc(uint32_t flags)
 {
-	return flags & (
+    return flags & (
         BMO_FMT_PCM_U8      |
-        BMO_FMT_PCM_8 	    |
-        BMO_FMT_PCM_16_LE	|
-        BMO_FMT_PCM_24_LE	|
-        BMO_FMT_PCM_32_LE	|
+        BMO_FMT_PCM_8       |
+        BMO_FMT_PCM_16_LE   |
+        BMO_FMT_PCM_24_LE   |
+        BMO_FMT_PCM_32_LE   |
         BMO_FMT_FLOAT_32_LE |
-        BMO_FMT_FLOAT_64_LE	|
-        BMO_FMT_PCM_16_BE	|
-        BMO_FMT_PCM_24_BE	|
-        BMO_FMT_PCM_32_BE	|
-        BMO_FMT_FLOAT_32_BE	|
-        BMO_FMT_FLOAT_64_BE	|
-//        BMO_FMT_SNDFILE     |
+        BMO_FMT_FLOAT_64_LE |
+        BMO_FMT_PCM_16_BE   |
+        BMO_FMT_PCM_24_BE   |
+        BMO_FMT_PCM_32_BE   |
+        BMO_FMT_FLOAT_32_BE |
+        BMO_FMT_FLOAT_64_BE |
         BMO_FMT_NATIVE_FLOAT
     );
 }
@@ -235,15 +234,12 @@ uint32_t bmo_fmt_stride(uint32_t flags)
         case BMO_FMT_PCM_16_BE: return 2;
         case BMO_FMT_PCM_24_BE: return 3;
         case BMO_FMT_PCM_32_BE:return 4;
-		case BMO_FMT_FLOAT_32_BE:return 4;
-		case BMO_FMT_FLOAT_64_BE:return 8;
-		case BMO_FMT_NATIVE_FLOAT: return sizeof(float);
-        // libsndfile interface only uses native floats
-//        case BMO_FMT_SNDFILE: return sizeof (float);
-//		default:return 0;
-	}
-	assert(0);
-	return 0x0; //compiler complains without the return
+        case BMO_FMT_FLOAT_32_BE:return 4;
+        case BMO_FMT_FLOAT_64_BE:return 8;
+        case BMO_FMT_NATIVE_FLOAT: return sizeof(float);
+    }
+    assert(0);
+    return 0x0; // compiler complains without the return
 }
 
 
@@ -262,12 +258,10 @@ int bmo_fmt_pcm(uint32_t flags)
         case BMO_FMT_PCM_32_BE: return 1;
         case BMO_FMT_FLOAT_32_BE: return 0;
         case BMO_FMT_FLOAT_64_BE: return 0;
-        // sndfile interfaces only use libsndfile's float routines
-//        case BMO_FMT_SNDFILE: return 0;
         default: return 0;
     }
-	assert(0);
-	return 0x0; //compiler complains without the return
+    assert(0);
+    return 0x0; // compiler complains without the return
 }
 
 
@@ -288,8 +282,8 @@ uint32_t bmo_fmt_end(uint32_t flags)
         case BMO_FMT_NATIVE_FLOAT: return bmo_host_endianness();
         default: return 0x0;
     }
-	assert(0);
-	return 0x0; //compiler complains without the return
+    assert(0);
+    return 0x0; // compiler complains without the return
 }
 
 uint32_t bmo_fmt_dither(uint32_t flags)
@@ -316,17 +310,17 @@ float _bmo_fmt_pcm_range(uint32_t fmt)
 {
     // powers of two can be completely represented by s.p. float up to
     switch (bmo_fmt_stride(fmt) * 8) {
-        case  8: return 256.0;
-		case 12: return 4096.0;
-		case 16: return 65536.0;
-		case 20: return 1048576.0;
-		case 24: return 16777216.0;
-		case 32: return 4294967296.0;
-		case 48: return 281474976710656.0;
-		case 64: return 18446744073709551616.0;
-		default: return powf(2, bmo_fmt_stride(fmt) * 8);
-	}
-	assert(0);
+        case 8: return 256.0;
+        case 12: return 4096.0;
+        case 16: return 65536.0;
+        case 20: return 1048576.0;
+        case 24: return 16777216.0;
+        case 32: return 4294967296.0;
+        case 48: return 281474976710656.0;
+        case 64: return 18446744073709551616.0;
+        default: return powf(2, bmo_fmt_stride(fmt) * 8);
+    }
+    assert(0);
 }
 
 #define must_swap(x)((bmo_fmt_end((x)) != bmo_host_endianness()))
@@ -337,8 +331,8 @@ void bmo_conv_iftoif(
     uint32_t samples
 )
 {
-	bmo_debug("\n");
-	assert((!bmo_fmt_pcm(fmt_in)) && (!bmo_fmt_pcm(fmt_out)));
+    bmo_debug("\n");
+    assert((!bmo_fmt_pcm(fmt_in)) && (!bmo_fmt_pcm(fmt_out)));
 
     const uint32_t endian_in = bmo_fmt_end(fmt_in);
     const uint32_t endian_out = bmo_fmt_end(fmt_out);
@@ -346,10 +340,10 @@ void bmo_conv_iftoif(
     const int swap_in = must_swap(fmt_in);
     const int swap_out = must_swap(fmt_out);
 
-	float f;
-	float *fp;
-	double d;
-	double *dp;
+    float f;
+    float *fp;
+    double d;
+    double *dp;
     switch (bmo_fmt_stride(fmt_in)) {
         case 4: {
             if (bmo_fmt_stride(fmt_out) == sizeof(float)) {
@@ -371,7 +365,7 @@ void bmo_conv_iftoif(
                 }
             }
             break;
-		}
+        }
         case 8: {
             if (bmo_fmt_stride(fmt_out) == sizeof(double)) {
                 // double to double
@@ -392,9 +386,9 @@ void bmo_conv_iftoif(
                 }
             }
             break;
-		}
-		default:assert(0);
-	}
+        }
+        default:assert(0);
+    }
 }
 
 

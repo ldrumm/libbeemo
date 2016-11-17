@@ -57,7 +57,7 @@ Metadata is ignored.
 
 BMO_buffer_obj_t *bmo_fopen_sun(const char *path, uint32_t flags)
 {
-    BMO_au_header_t header = {0};
+    BMO_au_header_t header = {.au_magic_number = {0}};
     void *data;
     uint32_t *hp;
     int err = 0;
@@ -299,7 +299,7 @@ int bmo_fwrite_header_sun(
     }
     return 0;
 
-}	//bmo_fwrite_header_sun
+}
 
 /** Dumps an audio buffer as a sun/NeXT audio file
 

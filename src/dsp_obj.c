@@ -43,7 +43,7 @@ bmo_dsp_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
     BMO_dsp_obj_t *dsp = malloc(sizeof(BMO_dsp_obj_t));
     if (!dsp) {
         bmo_err("couldn't create dsp object:%s\n", strerror(errno));
-		return NULL;
+        return NULL;
     }
     dsp->frames = frames;
     dsp->id = bmo_uid();
@@ -67,7 +67,7 @@ bmo_dsp_new(uint32_t flags, uint32_t channels, uint32_t frames, uint32_t rate)
     dsp->_close = _bmo_dsp_close;
     dsp->in_ports = NULL;
     dsp->ctl_ports = NULL;
-    /*	dsp->update_obj_buffer = NULL;*/
+    // dsp->update_obj_buffer = NULL;
 
     return dsp;
 }
