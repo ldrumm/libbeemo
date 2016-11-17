@@ -13,11 +13,11 @@ env.SConscript('interactive/SConscript', 'env')
 """
 The test builders search the tests directory for all C sources, and build each
 of them with the current environment, then link them to the libbeemo shared
-library.  Currently every single C source is assumed to have a main(), so a
-single test should be a single file.  If external files need to be built they
-should be directly #included as compilable source.  Any extraneous external
+library. Currently every single C source is assumed to have a main(), so a
+single test should be a single file. If external files need to be built they
+should be directly #included as compilable source. Any extraneous external
 dependencies not part of the main env() will probably fail, unless the scons
-dependency resolver can automatically link the deps as necessary.  This is
+dependency resolver can automatically link the deps as necessary. This is
 naturally not a robust solution, but allows us to write quick and simple tests
 for the main library. Hopefully this encourages more sanity-checks.
 """
@@ -38,15 +38,15 @@ def _print(*args):
 def run_all_tests(env, sources_list, **kwargs):
     """
     In the normal SCons flow, a failing unittest will cause the build to fail
-    immediately. We don't want that.  We want a report of all the
-    failures/errors.  A possible solution would be `scons -i` though it will
-    return success, and we need jenkins/travis/whatever to know.  Also, with
+    immediately. We don't want that. We want a report of all the
+    failures/errors. A possible solution would be `scons -i` though it will
+    return success, and we need jenkins/travis/whatever to know. Also, with
     `scons -i` the build will return success even if multiple failures occur in
-    the main library build.  This behaviour prevents us from getting the
+    the main library build. This behaviour prevents us from getting the
     complete picture as we want to collect all test results without immediately
-    bailing the build on a test failure.  Calling this function with a list of
+    bailing the build on a test failure. Calling this function with a list of
     sources cause all tests to run after a successful build, and pretend the
-    test was successful to prevent immediate failure.  On completion of the
+    test was successful to prevent immediate failure. On completion of the
     test run, the results are inspected and any failing testcase  causes a
     BuildError to be thrown after failures are listed, and the failed targets
     are deleted to force the scons dependency resolver to rebuild on the next
@@ -158,9 +158,9 @@ def run_all_tests(env, sources_list, **kwargs):
         env.AddPostAction(test, execute_test)
 
     # this is a big hack: In order to allow the scons dependency resolver to
-    # work properly, we  must allow out-of-order builds.  We must register
+    # work properly, we  must allow out-of-order builds. We must register
     # `report_test_status` to depend on built tests, and it must check if not
-    # all tests have been completed and exit immediately in that case.  Because
+    # all tests have been completed and exit immediately in that case. Because
     # the target is always unique and never exists, this test always runs.
     Depends(Command(uuid.uuid4().hex, programs, report_test_status), programs)
 
