@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
+
 int mkstemp(char *template)
 {
     char *path = mktemp(template);
@@ -52,7 +53,8 @@ void winsetup(void)
     //	_CrtSetReportHook(report_hook);
 }
 
-#endif
+#endif // _WIN32
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 static uint32_t CHANNELS = 2;
@@ -93,7 +95,7 @@ void assert_multibuf_equal(float **a, float **b, uint32_t channels, uint32_t fra
 static void _setup_logging(void)
 {
     bmo_verbosity(BMO_MESSAGE_DEBUG);
-    const char * env = getenv("LOGLEVEL");
+    const char *env = getenv("LOGLEVEL");
     if (env) {
         if (strcasecmp(env, "INFO") == 0) {
             bmo_verbosity(BMO_MESSAGE_INFO);
@@ -112,7 +114,7 @@ static void _setup_logging(void)
 
 static void _setup_driver(void)
 {
-    const char * env = getenv("DRIVER");
+    const char *env = getenv("DRIVER");
     if (env) {
         #ifdef BMO_HAVE_JACK
         if (strcasecmp(env, "JACK") == 0) {
@@ -127,7 +129,7 @@ static void _setup_driver(void)
     }
 }
 
-void bmo_test_setup(void)
+static void bmo_test_setup(void)
 {
 	#ifdef _WIN32
 	winsetup();
