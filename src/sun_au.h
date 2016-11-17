@@ -19,7 +19,7 @@ int bmo_fwrite_header_sun(
 
 typedef struct
 {
-	char au_magic_number[4];	/// ASCII '.snd' or 0x2e736e64
+	unsigned char au_magic_number[4];	/// ASCII '.snd' or 0x2e736e64
 	uint32_t au_data_offset;	///	Audio data offset in bytes from the beginning of the file. This value is stored big endian. Most of the time this value = 24 bytes, but this is by no means guaranteed.
 	uint32_t au_data_size;		///	The size in bytes of the data following the header. Usually filesize-24 stored big endian in the file.
 	uint32_t au_data_encoding;	///	The encoding for the audio stream. Stored big-endian in the file. Common values are 3 - 16bit, linear PCM; 4 - 24bit, linear PCM; 6 - 32bit, IEEE floating point.

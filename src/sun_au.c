@@ -57,11 +57,7 @@ Metadata is ignored.
 
 BMO_buffer_obj_t *bmo_fopen_sun(const char *path, uint32_t flags)
 {
-    BMO_au_header_t header = {
-        .metadata = NULL,
-        .metadata_len = 0
-    };
-
+    BMO_au_header_t header = {0};
     void *data;
     uint32_t *hp;
     int err = 0;
