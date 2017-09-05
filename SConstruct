@@ -84,7 +84,8 @@ class ArgOpts(object):
 def std_switches(env):
     env.Append(CCFLAGS=['-std=c99', '-Wall', '-Wextra', '-g3'])
     # enable color output from tools.
-    env['ENV']['TERM'] = os.environ['TERM']
+    if 'TERM' in os.environ:
+        env['ENV']['TERM'] = os.environ['TERM']
     env["CC"] = os.getenv("CC", env["CC"])
 
 
